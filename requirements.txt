@@ -1,0 +1,14 @@
+django
+mysqlclient
+django-environ
+cryptography
+django-cryptography
+django-tailwind
+celery
+redis
+requests
+email_validator==2.2.0
+WTForms==3.1.2
+django-browser-reload
+#pip install django-browser-reload  
+
