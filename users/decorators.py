@@ -1,4 +1,4 @@
-# users/decorators.py
+# file:users/decorators.py
 from django.http import HttpResponseForbidden
 
 def admin_required(view_func):

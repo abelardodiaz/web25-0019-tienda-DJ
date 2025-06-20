@@ -1,0 +1,80 @@
+/* file static/css/03.css */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+            transition: background-color 0.3s;
+        }
+        
+        .skeleton {
+            animation: skeleton-loading 1.5s linear infinite alternate;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-color: #1a1a1a; }
+            100% { background-color: #2a2a2a; }
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .dropdown {
+            transform: translateY(10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .dropdown.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .toast {
+            animation: toast-in 0.3s forwards, toast-out 0.3s forwards 2s;
+        }
+        
+        @keyframes toast-in {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes toast-out {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(100px); opacity: 0; }
+        }
+        
+        @media (max-width: 640px) {
+            .toast {
+                width: 90%;
+                left: 5%;
+                right: 5%;
+                bottom: 80px; 
+            }
+        }
+        
+        .user-menu:hover .dropdown {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .nav-item:hover .submenu {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    

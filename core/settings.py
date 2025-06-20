@@ -2,7 +2,7 @@
 """
 Django 5.2.3.
 """
-
+import os
 from pathlib import Path
 import environ
 env = environ.Env()
@@ -28,6 +28,9 @@ INSTALLED_APPS = [
     'tasks',
     'tailwind',
     'tema_base_oscuro',
+    'setup',
+    'dashboard',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -99,9 +102,7 @@ USE_TZ = True
 STATIC_URL = '/static/'  # URL para acceder a los archivos estáticos
 
 # Directorios adicionales (carpeta global)
-#STATICFILES_DIRS = [
-#    os.path.join(BASE_DIR, 'static'),
-#]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Carpeta para producción (donde se copian los archivos con collectstatic)
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -120,6 +121,8 @@ INTERNAL_IPS = ["127.0.0.1"]  # Necesario para desarrollo
 # Ruta al ejecutable de npm en Windows
 NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
 
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/account/profile/'       # o el nombre de tu URL: reverse_lazy('home')
 LOGOUT_REDIRECT_URL = '/'      # opcional, para después del logout
+
     

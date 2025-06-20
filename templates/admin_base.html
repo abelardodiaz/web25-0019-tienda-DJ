@@ -1,0 +1,187 @@
+<!-- file: templates/admin_base.html -->
+ {% load static %}
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel de Administración | TUTIENDA.com{% endblock %}</title>
+
+    <!-- Tailwind y Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Config Tailwind modo oscuro + colores -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#121212',
+                            800: '#1E1E1E',
+                            700: '#252525',
+                            600: '#333333',
+                        },
+                        accent: {
+                            500: '#4CAF50',
+                            400: '#66BB6A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Estilos propios -->
+    <link rel="stylesheet" href="{% static 'css/03.css' %}">
+</head>
+<body class="bg-dark-900">
+
+    <!-- Header con navegación -->
+    <header class="sticky top-0 z-50 bg-dark-800 border-b border-dark-600 shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-accent-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-store text-xl text-dark-900"></i>
+                </div>
+                <span class="ml-3 text-xl font-semibold">TUTIENDA.com</span>
+            </div>
+
+            <!-- Menú de navegación -->
+            <nav class="hidden md:flex items-center space-x-8">
+                <div class="nav-item relative">
+                    <button class="flex items-center text-gray-300 hover:text-white transition">
+                        <i class="fas fa-tachometer-alt mr-2"></i> PANEL
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
+                    <div class="submenu absolute left-0 top-full mt-2 w-56 bg-dark-800 rounded-lg shadow-xl p-2 transform translate-y-4 opacity-0 invisible transition-all duration-300">
+                        <a href="#" class="block px-4 py-2 hover:bg-dark-700 rounded-md text-accent-500">
+                            <i class="fas fa-cogs mr-2"></i> Panel Admin
+                        </a>
+                        <a href="#" class="block px-4 py-2 hover:bg-dark-700 rounded-md">
+                            <i class="fas fa-key mr-2"></i> Token API
+                        </a>
+                        <a href="#" class="block px-4 py-2 hover:bg-dark-700 rounded-md">
+                            <i class="fas fa-exchange-alt mr-2"></i> Tipo de Cambio
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-item relative">
+                    <button class="flex items-center text-gray-300 hover:text-white transition">
+                        <i class="fas fa-tools mr-2"></i> MANTENIMIENTO
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
+                    <div class="submenu absolute left-0 top-full mt-2 w-56 bg-dark-800 rounded-lg shadow-xl p-2 transform translate-y-4 opacity-0 invisible transition-all duration-300">
+                        <a href="#" class="block px-4 py-2 hover:bg-dark-700 rounded-md">
+                            <i class="fas fa-sync mr-2"></i> Sincronizar
+                        </a>
+                        <a href="#" class="block px-4 py-2 hover:bg-dark-700 rounded-md">
+                            <i class="fas fa-cog mr-2"></i> Gestión
+                        </a>
+                        <a href="#" class="block px-4 py-2 hover:bg-dark-700 rounded-md">
+                            <i class="fas fa-chart-bar mr-2"></i> Reportes
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Menú de usuario -->
+            <div class="user-menu relative flex items-center">
+                <button id="user-menu-btn" class="flex items-center text-gray-300 hover:text-white">
+                    <div class="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center mr-2">
+                        <i class="fas fa-user text-dark-900"></i>
+                    </div>
+                    <span class="hidden sm:inline">{{ request.user.username }}</span>
+                    <i class="fas fa-chevron-down ml-2 text-xs hidden sm:inline"></i>
+                </button>
+
+                <div id="user-dropdown" class="dropdown absolute right-0 top-full mt-2 w-48 bg-dark-800 rounded-lg shadow-xl py-2 transform translate-y-4 opacity-0 invisible">
+                    <div class="px-4 py-2 border-b border-dark-700">
+                        <p class="font-medium">{{ request.user.email }}</p>
+                        <p class="text-xs text-gray-400">{{ request.user.get_role_display }}</p>
+                    </div>
+                    <a href="{% url 'profile' %}" class="block px-4 py-2 hover:bg-dark-700">
+                        <i class="fas fa-user mr-2"></i> Perfil
+                    </a>
+                    <form method="post" action="{% url 'logout' %}" class="w-full">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full text-left px-4 py-2 hover:bg-dark-700 text-red-400">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido principal inyectado por las vistas -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="bg-dark-800 border-t border-dark-700 mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="font-medium mb-4">Marcas</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Electrónica</a></li>
+                        <li><a href="#" class="hover:text-white transition">Hogar</a></li>
+                        <li><a href="#" class="hover:text-white transition">Ropa</a></li>
+                        <li><a href="#" class="hover:text-white transition">Deportes</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-medium mb-4">Categorías</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Electrónica</a></li>
+                        <li><a href="#" class="hover:text-white transition">Hogar</a></li>
+                        <li><a href="#" class="hover:text-white transition">Ropa</a></li>
+                        <li><a href="#" class="hover:text-white transition">Deportes</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-medium mb-4"></h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Sobre nosotros</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contacto</a></li>
+                        <li><a href="#" class="hover:text-white transition">Política de privacidad</a></li>
+                        <li><a href="#" class="hover:text-white transition">Términos y condiciones</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-dark-700 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">© 2025 tutienda.com Todos los derechos reservados.</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-pinterest"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast de notificación -->
+    <div id="toast" class="toast fixed bottom-6 right-6 bg-dark-800 border border-dark-700 rounded-lg p-4 shadow-xl z-50 hidden">
+        <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center mr-3">
+                <i class="fas fa-check text-dark-900"></i>
+            </div>
+            <div>
+                <p class="font-medium">¡Cambios guardados!</p>
+                <p class="text-sm text-gray-400">La configuración se actualizó correctamente</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts propios -->
+    <script src="{% static 'js/03.js' %}"></script>
+</body>
+</html>

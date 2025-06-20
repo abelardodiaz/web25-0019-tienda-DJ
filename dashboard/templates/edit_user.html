@@ -1,0 +1,36 @@
+<!-- file: users/templates/edit_user.html -->
+{% extends 'admin_base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Editar Usuario: {{ form.instance.username }}</h1>
+    
+    <form method="post" class="bg-dark-800 rounded-xl p-6 border border-dark-700">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium mb-2">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                <p class="text-xs text-red-500 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'dashboard:admin_panel' %}" class="bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded-lg font-medium transition">
+                Cancelar
+            </a>
+            <button type="submit" class="bg-accent-500 hover:bg-accent-400 text-dark-900 py-2 px-4 rounded-lg font-medium transition">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
