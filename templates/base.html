@@ -1,0 +1,308 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TUTIENDA.com{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#121212',
+                            800: '#1E1E1E',
+                            700: '#252525',
+                            600: '#333333',
+                        },
+                        accent: {
+                            500: '#4CAF50',
+                            400: '#66BB6A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{% static 'css/cat.css' %}">
+</head>
+<body class="bg-dark-900">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-dark-800 border-b border-dark-600 shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-accent-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-store text-xl text-dark-900"></i>
+                </div>
+                <span class="ml-3 text-xl font-semibold">TUTIENDA.com</span>
+            </div>
+            
+            <!-- Modificar el formulario de búsqueda existente -->
+       
+            <!-- Barra de búsqueda escritorio -->
+            <div class="hidden md:flex flex-1 max-w-2xl mx-6">
+                <form action="{% url 'home' %}" method="get" class="relative w-full">
+                    <input 
+                        type="text" 
+                        name="q"
+                        placeholder="Buscar productos en la tienda"
+                        class="w-full bg-dark-700 text-gray-200 rounded-lg py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                        value="{{ request.GET.q }}"
+                    >
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </form>
+            </div>
+            
+            <!-- Panel de búsqueda móvil - CAMBIO DE ID -->
+            <div id="mobile-search-panel" class="search-panel fixed top-0 left-0 w-full bg-dark-800 shadow-2xl z-50 -translate-y-full">
+                <div class="p-4 flex items-center">
+                    <form action="{% url 'home' %}" method="get" class="relative flex-1">
+                        <input 
+                            type="text" 
+                            name="q"
+                            placeholder="Buscar productos..."
+                            class="w-full bg-dark-700 text-gray-200 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                            value="{{ request.GET.q }}"
+                        >
+                        <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
+                    </form>
+                    <button id="search-close" class="text-gray-400 hover:text-white ml-3">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Iconos de navegación -->
+            <div class="flex items-center space-x-5">
+                <button id="search-toggle" class="md:hidden text-gray-400 hover:text-white">
+                    <i class="fas fa-search text-xl"></i>
+                </button>
+                <button id="cart-toggle" class="text-gray-400 hover:text-white relative">
+                    <i class="fas fa-shopping-bag text-xl"></i>
+                    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+                </button>
+                <button id="filter-toggle" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-filter text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Contenido principal -->
+    <main class="container mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-dark-800 border-t border-dark-700 mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- CATEGORÍAS -->
+                <div>
+                    <h4 class="font-medium mb-4">Categorías</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        {% for cat in footer_categorias %}
+                        <li>
+                            <a href="{% url 'home' %}?categoria={{ cat.id }}"
+                            class="hover:text-white transition">
+                            {{ cat.name }}
+                            </a>
+                        </li>
+                        {% empty %}
+                        <li>No hay categorías.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- MARCAS -->
+                <div>
+                    <h4 class="font-medium mb-4">Marcas</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        {% for brand in footer_marcas %}
+                        <li>
+                            <a href="{% url 'home' %}?marca={{ brand.id }}"
+                            class="hover:text-white transition">
+                            {{ brand.name }}
+                            </a>
+                        </li>
+                        {% empty %}
+                        <li>No hay marcas.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- ENLACES LEGALES / INFO -->
+                <div>
+                    <h4 class="font-medium mb-4">Información</h4>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#" class="hover:text-white transition">Sobre nosotros</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contacto</a></li>
+                        <li><a href="#" class="hover:text-white transition">Política de privacidad</a></li>
+                        <li><a href="#" class="hover:text-white transition">Términos y condiciones</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-dark-700 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">© 2025 tutienda.com Todos los derechos reservados.</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-pinterest"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>    
+    
+    <div id="cart-panel" class="cart-panel fixed top-0 right-0 h-full w-full md:w-96 bg-dark-800 
+        shadow-2xl z-50 overflow-y-auto translate-x-full -translate-y-full">
+        
+    <div class="p-5 flex flex-col h-full">
+        <!-- Cabecera -->
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">
+                Carrito (<span id="cart-count">3</span>)
+            </h3>
+            <button id="cart-close" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Lista de artículos (estática de muestra) -->
+        <div class="flex-1 space-y-4 overflow-y-auto pr-1">
+            <!-- Ítem 1 -->
+            <div class="flex items-center">
+                <img src="https://via.placeholder.com/80"
+                    class="w-16 h-16 object-cover rounded mr-4" alt="">
+                <div class="flex-1">
+                    <p class="font-medium">Router RB5009UG</p>
+                    <p class="text-sm text-gray-400">$233.63 USD</p>
+                </div>
+                <p class="font-medium">$233.63</p>
+            </div>
+
+            <!-- Ítem 2 -->
+            <div class="flex items-center">
+                <img src="https://via.placeholder.com/80"
+                    class="w-16 h-16 object-cover rounded mr-4" alt="">
+                <div class="flex-1">
+                    <p class="font-medium">RB4011iGS+RM</p>
+                    <p class="text-sm text-gray-400">$220.77 USD</p>
+                </div>
+                <p class="font-medium">$220.77</p>
+            </div>
+
+            <!-- Ítem 3 -->
+            <div class="flex items-center">
+                <img src="https://via.placeholder.com/80"
+                    class="w-16 h-16 object-cover rounded mr-4" alt="">
+                <div class="flex-1">
+                    <p class="font-medium">Fuente 24 V 3 A</p>
+                    <p class="text-sm text-gray-400">$45.00 USD</p>
+                </div>
+                <p class="font-medium">$45.00</p>
+            </div>
+        </div>
+
+        <!-- Totales y acciones -->
+        <div class="border-t border-dark-700 pt-5">
+            <div class="flex justify-between mb-4">
+                <span class="text-lg font-bold">Total</span>
+                <span class="text-lg font-bold" id="cart-total">$499.40 USD</span>
+            </div>
+
+            <button class="w-full bg-accent-500 text-dark-900 py-3 rounded-lg
+                            font-medium hover:bg-accent-400 transition mb-3">
+                Finalizar compra
+            </button>
+
+            <button id="cart-empty"
+                    class="w-full bg-dark-700 hover:bg-dark-600 py-2 rounded-lg
+                            font-medium text-gray-300">
+                Vaciar carrito
+            </button>
+        </div>
+    </div>
+    </div>
+    
+    <!-- Panel de filtros -->
+    <div id="filter-panel"
+     class="filter-panel fixed top-0 left-0 h-full w-full md:w-80
+            bg-dark-800 shadow-2xl z-60 overflow-y-auto
+            transform -translate-x-full transition-transform duration-300 ease-out">
+        <div class="p-5">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Filtros</h3>
+                <button id="filter-close" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Formulario de Filtros -->
+            <form action="{% url 'catalogo' %}" method="get">
+                <!-- Filtro por categoría -->
+                <div>
+                    <h4 class="font-medium mb-3">Categoría</h4>
+                    <div class="space-y-2">
+                        {% for categoria in categorias %}
+                        <label class="flex items-center">
+                            <input 
+                                type="checkbox" 
+                                name="categoria" 
+                                value="{{ categoria.id }}"
+                                class="rounded bg-dark-700 border-dark-600 text-accent-500"
+                                {% if categoria.id in categorias_seleccionadas %}checked{% endif %}
+                            >
+                            <span class="ml-2">{{ categoria.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Filtro por marca -->
+                <div class="mt-6">
+                    <h4 class="font-medium mb-3">Marca</h4>
+                    <div class="space-y-2">
+                        {% for marca in marcas %}
+                        <label class="flex items-center">
+                            <input 
+                                type="checkbox" 
+                                name="marca" 
+                                value="{{ marca.id }}"
+                                class="rounded bg-dark-700 border-dark-600 text-accent-500"
+                                {% if marca.id in marcas_seleccionadas %}checked{% endif %}
+                            >
+                            <span class="ml-2">{{ marca.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="flex space-x-3 mt-8">
+                    <button type="submit" class="flex-1 bg-accent-500 hover:bg-accent-400 text-dark-900 py-2 px-4 rounded-lg font-medium transition">
+                        Aplicar
+                    </button>
+                    <a href="{% url 'home' %}" class="flex-1 bg-dark-700 hover:bg-dark-600 py-2 px-4 rounded-lg font-medium text-center transition">
+                        Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast fixed bottom-6 right-6 bg-dark-800 border border-dark-700 rounded-lg p-4 shadow-xl z-50 hidden">
+        <!-- ... notificación toast ... -->
+    </div>
+    
+    <div id="overlay" class="fixed inset-0 bg-black/70 z-40 hidden"></div>
+    
+    <script src="{% static 'js/cat.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

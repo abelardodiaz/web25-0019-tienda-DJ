@@ -1,0 +1,184 @@
+<!-- dashboard/templates/admin_gestion.html -->
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Productos | TUTIENDA.com{% endblock %}
+
+{% block content %}
+<main class="container mx-auto px-4 py-8">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold mb-1">Gestión de Productos</h1>
+            <p class="text-gray-400">Lista de productos disponibles</p>
+        </div>
+        <div class="flex items-center">
+            <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+            <span class="bg-green-500/20 text-green-500 py-1 px-2 rounded-full text-xs">Conectado</span>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="bg-dark-800 rounded-xl p-6 border border-dark-700 mb-6">
+        <form method="GET" action="{% url 'dashboard:gestion_productos' %}">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Buscador -->
+                <div>
+                    <label class="block text-gray-400 mb-2">Buscar</label>
+                    <input type="text" name="q" value="{{ busqueda }}"
+                           class="w-full bg-dark-700 border border-dark-600 rounded-lg py-2 px-4 text-white focus:border-accent-500 focus:outline-none"
+                           placeholder="Título, modelo o marca...">
+                </div>
+                
+                <!-- Filtro por categoría -->
+                <div>
+                    <label class="block text-gray-400 mb-2">Categoría</label>
+                    <select name="categoria"
+                            class="w-full bg-dark-700 border border-dark-600 rounded-lg py-2 px-4 text-white focus:border-accent-500 focus:outline-none">
+                        <option value="">Todas las categorías</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if current_categoria == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Filtro por marca -->
+                <div>
+                    <label class="block text-gray-400 mb-2">Marca</label>
+                    <select name="marca"
+                            class="w-full bg-dark-700 border border-dark-600 rounded-lg py-2 px-4 text-white focus:border-accent-500 focus:outline-none">
+                        <option value="">Todas las marcas</option>
+                        {% for marca in marcas %}
+                        <option value="{{ marca.id }}" {% if current_marca == marca.id %}selected{% endif %}>{{ marca.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button type="submit" 
+                        class="bg-accent-500 hover:bg-accent-400 text-dark-900 font-medium py-2 px-6 rounded-lg inline-flex items-center">
+                    <i class="fas fa-filter mr-2"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de productos -->
+    <div class="bg-dark-800 rounded-xl p-6 border border-dark-700 mb-6">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <!-- ────────── BLOQUE NUEVO: cabecera unificada ────────── -->
+                <thead>
+                    <tr class="border-b border-dark-700 text-left text-gray-400 text-sm">
+                        <th class="pb-3 px-2">Imagen</th>
+                        <th class="pb-3 px-2 w-[70ch]">Producto</th>
+                        <th class="pb-3 px-2">ID</th>
+                        <th class="pb-3 px-2">Marca</th>
+                        <!-- Existencias ahora en una sola columna -->
+                        <th class="pb-3 px-2">Existencia</th>
+                        <th class="pb-3 px-2">Precio Desc.</th>
+                        <th class="pb-3 px-2">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr class="border-b border-dark-700 hover:bg-dark-750">
+                        <td class="py-3 px-2">
+                            <img src="{{ producto.main_image }}" alt="{{ producto.title }}" 
+                                 class="w-12 h-12 object-cover rounded-lg">
+                        </td>
+                        <td class="py-3 px-2 w-[70ch]">
+                            <div>
+                                <!-- Título: fuente text-xs (crece a md:text-sm), wrap con break-words y whitespace-normal -->
+                                <p class="text-xs md:text-sm font-medium break-words whitespace-normal">
+                                    {{ producto.title|truncatechars:70 }}
+                                </p>
+                                <p class="text-xs text-gray-400">{{ producto.model }}</p>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2 text-gray-400">{{ producto.syscom_id }}</td>
+                        <td class="py-3 px-2">{{ producto.brand.name }}</td>
+                        <td class="py-3 px-2">
+                            <div class="flex flex-col">
+                                <!-- línea principal: total -->
+                                <span>Total: {{ producto.total_stock_sum }}</span>
+                                <!-- línea secundaria: SLP -->
+                                <span class="text-xs text-accent-500">SLP: {{ producto.slp_stock_sum }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2 text-green-500 font-medium">
+                            ${{ producto.discount_price }} USD
+                        </td>
+                        <td class="py-3 px-2">
+                            <div class="flex space-x-2">
+                                <!-- Editar producto -->
+
+                                <a href="" class="text-blue-400 hover:text-blue-300">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <!-- Editar imágenes -->
+
+                                <a href="" class="text-purple-400 hover:text-purple-300">
+                                    <i class="fas fa-images"></i>
+                                </a>
+                                <!-- Editar precios -->
+
+                                <a href="" class="text-yellow-400 hover:text-yellow-300">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </a>
+                                <!-- Eliminar -->
+
+                                <a href="" class="text-red-400 hover:text-red-300">
+                                    <i class="fas fa-trash"></i>
+                                </a>                    
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="py-4 px-2 text-center text-gray-400">
+                            No se encontraron productos.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if productos.has_other_pages %}
+        <div class="mt-6 flex justify-center">
+            <nav class="inline-flex rounded-md shadow">
+                {% if productos.has_previous %}
+                <a href="?page={{ productos.previous_page_number }}{% if current_categoria %}&categoria={{ current_categoria }}{% endif %}{% if current_marca %}&marca={{ current_marca }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}"
+                   class="py-2 px-4 rounded-l-md border border-dark-600 bg-dark-700 text-sm font-medium text-white hover:bg-dark-600">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+                
+                {% for num in productos.paginator.page_range %}
+                    {% if productos.number == num %}
+                    <a href="#" class="py-2 px-4 border-t border-b border-dark-600 bg-accent-500 text-dark-900 text-sm font-medium">
+                        {{ num }}
+                    </a>
+                    {% else %}
+                    <a href="?page={{ num }}{% if current_categoria %}&categoria={{ current_categoria }}{% endif %}{% if current_marca %}&marca={{ current_marca }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}"
+                       class="py-2 px-4 border-t border-b border-dark-600 bg-dark-700 text-sm font-medium text-white hover:bg-dark-600">
+                        {{ num }}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if productos.has_next %}
+                <a href="?page={{ productos.next_page_number }}{% if current_categoria %}&categoria={{ current_categoria }}{% endif %}{% if current_marca %}&marca={{ current_marca }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}"
+                   class="py-2 px-4 rounded-r-md border border-dark-600 bg-dark-700 text-sm font-medium text-white hover:bg-dark-600">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

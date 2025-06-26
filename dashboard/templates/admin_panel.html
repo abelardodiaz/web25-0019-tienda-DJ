@@ -80,6 +80,8 @@
                     <button data-tab="settings" class="tab-btn py-3 px-1 border-b-2 border-transparent text-gray-400 hover:text-white font-medium">
                         <i class="fas fa-cog mr-2"></i> Configuración
                     </button>
+                
+
                 </div>
             </div>
             
@@ -128,56 +130,56 @@
                                     <th class="pb-3 px-2 text-right">Acciones</th>
                                 </tr>
                             </thead>
-        <tbody>
-            {% for user in users %}
-            <tr class="border-b border-dark-700 hover:bg-dark-750">
-                <td class="py-3 px-2">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center mr-3">
-                            <i class="fas fa-user text-dark-900"></i>
-                        </div>
-                        <span>{{ user.username }}</span>
-                    </div>
-                </td>
-                <td class="py-3 px-2">{{ user.email }}</td>
-                <td class="py-3 px-2">
-                    {% if user.is_superuser %}
-                        <span class="bg-accent-500/20 text-accent-500 py-1 px-2 rounded-full text-xs">Administrador</span>
-                    {% else %}
-                        <span class="bg-purple-500/20 text-purple-500 py-1 px-2 rounded-full text-xs">Usuario</span>
-                    {% endif %}
-                </td>
-                <td class="py-3 px-2">
-                    {% if user.is_active %}
-                        <span class="bg-green-500/20 text-green-500 py-1 px-2 rounded-full text-xs">Activo</span>
-                    {% else %}
-                        <span class="bg-red-500/20 text-red-500 py-1 px-2 rounded-full text-xs">Inactivo</span>
-                    {% endif %}
-                </td>
-                <td class="py-3 px-2 text-sm text-gray-400">
-                    {% if user.last_login %}
-                        {{ user.last_login|timesince }} atrás
-                    {% else %}
-                        Nunca
-                    {% endif %}
-                </td>
-                <td class="py-3 px-2 text-right">
-                    <!-- Corrección aquí: añadir comillas -->
-                    <a href="{% url 'dashboard:edit_user' user.id %}" class="w-8 h-8 rounded-full bg-dark-700 hover:bg-blue-500 flex items-center justify-center mr-1 inline-block">
-                        <i class="fas fa-edit text-xs"></i>
-                    </a>
-                    <!-- Corrección aquí: añadir comillas y corregir nombre -->
-                    <a href="{% url 'dashboard:delete_user' user.id %}" class="w-8 h-8 rounded-full bg-dark-700 hover:bg-red-500 flex items-center justify-center inline-block">
-                        <i class="fas fa-trash text-xs"></i>
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+                            <tbody>
+                                {% for user in users %}
+                                <tr class="border-b border-dark-700 hover:bg-dark-750">
+                                    <td class="py-3 px-2">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center mr-3">
+                                                <i class="fas fa-user text-dark-900"></i>
+                                            </div>
+                                            <span>{{ user.username }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2">{{ user.email }}</td>
+                                    <td class="py-3 px-2">
+                                        {% if user.is_superuser %}
+                                            <span class="bg-accent-500/20 text-accent-500 py-1 px-2 rounded-full text-xs">Administrador</span>
+                                        {% else %}
+                                            <span class="bg-purple-500/20 text-purple-500 py-1 px-2 rounded-full text-xs">Usuario</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-2">
+                                        {% if user.is_active %}
+                                            <span class="bg-green-500/20 text-green-500 py-1 px-2 rounded-full text-xs">Activo</span>
+                                        {% else %}
+                                            <span class="bg-red-500/20 text-red-500 py-1 px-2 rounded-full text-xs">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-2 text-sm text-gray-400">
+                                        {% if user.last_login %}
+                                            {{ user.last_login|timesince }} atrás
+                                        {% else %}
+                                            Nunca
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <!-- Corrección aquí: añadir comillas -->
+                                        <a href="{% url 'dashboard:edit_user' user.id %}" class="w-8 h-8 rounded-full bg-dark-700 hover:bg-blue-500 flex items-center justify-center mr-1 inline-block">
+                                            <i class="fas fa-edit text-xs"></i>
+                                        </a>
+                                        <!-- Corrección aquí: añadir comillas y corregir nombre -->
+                                        <a href="{% url 'dashboard:delete_user' user.id %}" class="w-8 h-8 rounded-full bg-dark-700 hover:bg-red-500 flex items-center justify-center inline-block">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
                         </table>
                     </div>
                     
-                    <!-- Paginación
+                    <!-- Paginación -->
                     <div class="flex justify-between items-center mt-6">
                         <p class="text-sm text-gray-400">
                             Mostrando {{ users.start_index }} - {{ users.end_index }} de {{ users.paginator.count }} usuarios
@@ -209,7 +211,9 @@
                                 </a>
                             {% endif %}
                         </nav>
-                    </div> -->
+                    </div>
+                </div>
+            </div>
             
             <!-- Tab de base de datos -->
             <div id="database" class="tab-content">
@@ -250,10 +254,9 @@
                             </div>
                             
                             <div class="mt-6">
-                                <button class="w-full bg-blue-500 hover:bg-blue-400 text-white py-3 px-4 rounded-lg font-bold transition flex items-center justify-center">
+                                <a href="{% url 'dashboard:reset_partial' %}" class="w-full bg-blue-500 hover:bg-blue-400 text-white py-3 px-4 rounded-lg font-bold transition flex items-center justify-center">
                                     <i class="fas fa-sync mr-2"></i> Ejecutar Reset Parcial
-                                </button>
-                                <p class="text-xs text-gray-500 mt-2 text-center">Esta acción no se puede deshacer. Se recomienda hacer una copia de seguridad primero.</p>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -287,9 +290,9 @@
                             </div>
                             
                             <div class="mt-6">
-                                <button id="full-reset-btn" class="w-full bg-red-500 hover:bg-red-400 text-white py-3 px-4 rounded-lg font-bold transition flex items-center justify-center opacity-50" disabled>
+                                <a href="{% url 'dashboard:reset_full' %}" class="w-full bg-red-500 hover:bg-red-400 text-white py-3 px-4 rounded-lg font-bold transition flex items-center justify-center">
                                     <i class="fas fa-bomb mr-2"></i> Ejecutar Reset Completo
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -384,54 +387,98 @@
                     
                     <!-- Accesos API -->
                     <div class="bg-dark-800 rounded-xl p-6 border border-dark-700">
-                        <h3 class="text-xl font-bold mb-6">Tokens de API</h3>
+                        <h3 class="text-xl font-bold mb-6">Credenciales API</h3>
                         
-                        <div class="space-y-4">
+                        <div class="space-y-6">
+                            <!-- Formulario para credenciales -->
                             <div class="bg-dark-750 p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="font-medium">Token de Administración</span>
-                                    <span class="text-xs bg-green-500/20 text-green-500 py-1 px-2 rounded-full">Activo</span>
-                                </div>
-                                <div class="text-xs bg-dark-900 py-2 px-3 rounded mt-2 font-mono break-all">tk_8x7a3b9c2d1e0f5g6h7i8j9k0l1m2n3o4p</div>
-                                <div class="flex mt-3">
-                                    <button class="text-xs bg-dark-700 hover:bg-dark-600 py-1 px-3 rounded mr-2">
-                                        <i class="fas fa-copy mr-1"></i> Copiar
+                                <form method="post" action="{% url 'dashboard:save_syscom_credentials' %}">
+                                    {% csrf_token %}
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Client ID</label>
+                                        <input 
+                                            type="text" 
+                                            name="client_id" 
+                                            value="{{ syscom_credential.client_id|default:'' }}"
+                                            class="w-full bg-dark-700 text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                            placeholder="Ingrese su Client ID"
+                                        >
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Client Secret</label>
+                                        <input 
+                                            type="password" 
+                                            name="client_secret" 
+                                            value="{{ syscom_credential.client_secret|default:'' }}"
+                                            class="w-full bg-dark-700 text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                                            placeholder="Ingrese su Client Secret"
+                                        >
+                                    </div>
+                                    
+                                    <button type="submit" class="bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded-lg font-medium">
+                                        Guardar Credenciales
                                     </button>
-                                    <button class="text-xs bg-dark-700 hover:bg-blue-500 py-1 px-3 rounded mr-2">
-                                        <i class="fas fa-redo mr-1"></i> Regenerar
-                                    </button>
-                                    <button class="text-xs bg-dark-700 hover:bg-red-500 py-1 px-3 rounded">
-                                        <i class="fas fa-trash mr-1"></i> Eliminar
-                                    </button>
-                                </div>
+                                </form>
                             </div>
                             
+                            <!-- Información del token -->
                             <div class="bg-dark-750 p-4 rounded-lg">
                                 <div class="flex justify-between items-center mb-2">
-                                    <span class="font-medium">Token de Lectura</span>
-                                    <span class="text-xs bg-yellow-500/20 text-yellow-500 py-1 px-2 rounded-full">Expirado</span>
+                                    <span class="font-medium">Token de Acceso API</span>
+                                    {% if syscom_credential and syscom_credential.token %}
+                                        {% if syscom_credential.is_expired %}
+                                            <span class="text-xs bg-red-500/20 text-red-500 py-1 px-2 rounded-full">Expirado</span>
+                                        {% elif syscom_credential.is_expired_soon %}
+                                            <span class="text-xs bg-yellow-500/20 text-yellow-500 py-1 px-2 rounded-full">Por expirar</span>
+                                        {% else %}
+                                            <span class="text-xs bg-green-500/20 text-green-500 py-1 px-2 rounded-full">Activo</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-xs bg-gray-500/20 text-gray-500 py-1 px-2 rounded-full">No configurado</span>
+                                    {% endif %}
                                 </div>
-                                <div class="text-xs bg-dark-900 py-2 px-3 rounded mt-2 font-mono break-all">tk_5z4y3x2w1v0u9t8s7r6q5p4o3n2m1l0k</div>
-                                <div class="flex mt-3">
-                                    <button class="text-xs bg-dark-700 hover:bg-dark-600 py-1 px-3 rounded mr-2">
-                                        <i class="fas fa-copy mr-1"></i> Copiar
-                                    </button>
-                                    <button class="text-xs bg-dark-700 hover:bg-blue-500 py-1 px-3 rounded mr-2">
-                                        <i class="fas fa-redo mr-1"></i> Regenerar
-                                    </button>
-                                    <button class="text-xs bg-dark-700 hover:bg-red-500 py-1 px-3 rounded">
-                                        <i class="fas fa-trash mr-1"></i> Eliminar
-                                    </button>
+                                
+                                {% if syscom_credential and syscom_credential.token %}
+                                    <div class="text-xs bg-dark-900 py-2 px-3 rounded mt-2 font-mono break-all">
+                                        {{ syscom_credential.token|truncatechars:40 }}
+                                    </div>
+                                    
+                                    <div class="mt-3 text-sm">
+                                        <p class="mb-1">
+                                            <span class="text-gray-400">Expira:</span>
+                                            {{ syscom_credential.expires_at|date:"Y-m-d H:i" }}
+                                        </p>
+                                        <p>
+                                            <span class="text-gray-400">Estado:</span>
+                                            {{ syscom_credential.token_status }}
+                                        </p>
+                                    </div>
+                                {% else %}
+                                    <div class="text-sm text-gray-400 mt-2">
+                                        No hay token configurado
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="mt-4">
+                                    <form method="post" action="{% url 'dashboard:renew_syscom_token' %}">
+                                        {% csrf_token %}
+                                        <button 
+                                            type="submit" 
+                                            class="bg-green-500 hover:bg-green-400 text-white py-2 px-4 rounded-lg font-medium"
+                                            {% if not syscom_credential or not syscom_credential.client_id %}disabled{% endif %}
+                                        >
+                                            <i class="fas fa-sync-alt mr-2"></i> Renovar Token
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
-                            
-                            <button class="w-full bg-dark-700 hover:bg-dark-600 py-3 px-4 rounded-lg font-medium transition flex items-center justify-center">
-                                <i class="fas fa-plus mr-2"></i> Generar Nuevo Token
-                            </button>
                         </div>
                     </div>
+
                 </div>
             </div>
+
         </div>
     </main>
 {% endblock %}

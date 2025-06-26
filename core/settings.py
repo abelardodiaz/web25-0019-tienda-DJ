@@ -2,19 +2,41 @@
 """
 Django 5.2.3.
 """
-import os
+import os, environ
 from pathlib import Path
-import environ
-env = environ.Env()
-
+from dotenv import load_dotenv
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(BASE_DIR / '.env')
-
+env = environ.Env()
+# SETUP_MODE = env.bool("SETUP_MODE", False) 
 SECRET_KEY = 'django-insecure-o@5==b%^nw6k9!1i63l1$m0g%__$^zge%$e6(6@-s5j07bzql6'
-
 DEBUG = True
-ALLOWED_HOSTS = ['192.168.0.15', 'localhost']
+ALLOWED_HOSTS = ['192.168.0.5', '192.168.0.8','localhost']
+# SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"  # Usa cookies firmadas en lugar de BD
+
+# core/settings.py (actualizado)
+import os
+
+# Reemplazar la definición existente de SETUP_MODE
+# Reemplazar la función setup_mode por una versión más robusta
+# def setup_mode():
+#     # 1. Verificar variable de entorno
+#     if os.getenv('SETUP_MODE', 'False').lower() == 'true':
+#         return True
+    
+#     # 2. Verificar archivo .env directamente
+#     env_path = os.path.join(BASE_DIR, ".env")
+#     if os.path.exists(env_path):
+#         with open(env_path, "r") as f:
+#             content = f.read()
+#             if "SETUP_MODE=True" in content:
+#                 return True
+    
+#     return False
+
+# SETUP_MODE = setup_mode()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -34,15 +56,16 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'core.middleware.FirstRunMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # ← Mantener pero usará cookies
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.FirstRunMiddleware',  # ← Nuestro middleware personalizado
+    'core.middleware.RoleMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middleware.RoleMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -58,6 +81,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # default Django processors…
+                "django.template.context_processors.request",
+                # ➊  nuestro nuevo processor
+                "catalogo.context_processors.categorias_marcas",
             ],
         },
     },
@@ -65,15 +92,78 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# CREATOR_CONN = {
+#     "ENGINE": "django.db.backends.mysql",
+#     "CONN_HEALTH_CHECKS": False,
+#     "CONN_MAX_AGE": 0,
+#     "AUTOCOMMIT": True,
+#     "USER":   env("DB_CREATOR_USER"),
+#     "PASSWORD": env("DB_CREATOR_PASSWORD"),
+#     "HOST":   env("DB_HOST", default="localhost"),
+#     "PORT":   env.int("DB_PORT", default=3306),
+#     "OPTIONS": {
+#         "init_command": "SET sql_mode='STRICT_TRANS_TABLES', time_zone = '+00:00'",  # Modificado
+#     },
+#     "ATOMIC_REQUESTS": False,
+# }
+
+# if SETUP_MODE:
+#     SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+#     # En modo setup apuntamos 'default' a una BD del sistema
+#     # (information_schema existe siempre, evita el 1046)
+#     DATABASES = {
+#         "default": { **CREATOR_CONN, "NAME": "information_schema" },
+#         "creator": { **CREATOR_CONN, "NAME": "" }  # opcional, para tu vista /setup
+#     }
+# else:
+#     SESSION_ENGINE = "django.contrib.sessions.backends.db"   # comportamiento normal
+#     # App ya instalada → usar la BD real con el usuario normal
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.mysql",
+#             "CONN_HEALTH_CHECKS": False,
+#             "CONN_MAX_AGE": 0,
+#             "AUTOCOMMIT": True,
+#             "NAME": env("DB_NAME"),
+#             "USER": env("DB_USER"),
+#             "PASSWORD": env("DB_PASSWORD"),
+#             "HOST": env("DB_HOST", default="localhost"),
+#             "PORT": env.int("DB_PORT", default=3306),
+#             "OPTIONS": {"init_command": "SET sql_mode='STRICT_TRANS_TABLES', time_zone = '+00:00'",},
+#             "TIME_ZONE": "UTC",  # ¡AÑADE ESTA LÍNEA!
+#             "ATOMIC_REQUESTS": False,
+#         }
+#     }
+
+# if not SETUP_MODE:
+#     # Solo añadimos 'default' cuando la BD ya existe
+#     DATABASES["default"] = {
+#         "ENGINE": "django.db.backends.mysql",
+#         "CONN_HEALTH_CHECKS": False,
+#         "CONN_MAX_AGE": 0,
+#         "AUTOCOMMIT": True,
+#         "NAME": env("DB_NAME"),               # web25019
+#         "USER": env("DB_USER"),               # web25019_us
+#         "PASSWORD": env("DB_PASSWORD"),
+#         "HOST": env("DB_HOST", default="localhost"),
+#         "PORT": env.int("DB_PORT", default="3306"),
+#         "OPTIONS": {"init_command": "SET sql_mode='STRICT_TRANS_TABLES', time_zone = '+00:00'",},
+#         "TIME_ZONE": "UTC",  # ¡AÑADE ESTA LÍNEA!
+#         "ATOMIC_REQUESTS": False,
+#     }
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': '3306',
-        'OPTIONS': {'charset': 'utf8mb4'},
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST", default="localhost"),
+        "PORT": env.int("DB_PORT", default=3306),
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES', time_zone = '+00:00'",
+        },
+        "TIME_ZONE": "UTC",
     }
 }
 
@@ -125,4 +215,8 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/account/profile/'       # o el nombre de tu URL: reverse_lazy('home')
 LOGOUT_REDIRECT_URL = '/'      # opcional, para después del logout
 
-    
+# AUTHENTICATION_BACKENDS = [
+#     'core.backends.SafeSetupAuthBackend' if SETUP_MODE else 'django.contrib.auth.backends.ModelBackend',
+# ]
+
+APPEND_SLASH = True

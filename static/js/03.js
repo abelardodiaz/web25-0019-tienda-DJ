@@ -60,15 +60,38 @@
                 }
             });
         });
-        
-        // Reset completo
-        fullResetBtn.addEventListener('click', () => {
-            const toast = document.getElementById('toast');
-            toast.querySelector('p.font-medium').textContent = '¡Reset completo iniciado!';
-            toast.querySelector('p.text-sm').textContent = 'Todos los datos están siendo eliminados';
-            toast.classList.remove('hidden');
-            
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 2500);
+     
+    document.querySelectorAll('.history-pagination a').forEach(link => {
+        link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.getAttribute('data-page');
+        // Lógica para cargar la página del historial
+        console.log('Cargando página:', page);
+    });
+});
+
+// Agregar al final del archivo existente
+
+// Manejar selección/deselección en sincronización
+const selectAll = document.getElementById('select-all');
+if (selectAll) {
+    const productChecks = document.querySelectorAll('.product-check');
+    const syncBtn = document.getElementById('sync-btn');
+    
+    selectAll.addEventListener('change', function() {
+        productChecks.forEach(check => {
+            check.checked = selectAll.checked;
         });
+        updateSyncButton();
+    });
+    
+    function updateSyncButton() {
+        const checkedProducts = document.querySelectorAll('.product-check:checked');
+        syncBtn.disabled = checkedProducts.length === 0;
+    }
+    
+    productChecks.forEach(check => {
+        check.addEventListener('change', updateSyncButton);
+    });
+}
+
