@@ -3,7 +3,8 @@ from django.urls import path
 from . import views
 
 from dashboard.buscar_sincronizar import sincronizar_productos, sincronizar_test
-from dashboard.admin_gestion import gestion_productos 
+from dashboard.admin_gestion import gestion_productos
+from dashboard import admin_editar_detalles
 
 
 app_name = 'dashboard'
@@ -21,6 +22,6 @@ urlpatterns = [
     path('sincronizar/', sincronizar_productos, name='sincronizar'),
     path('sincronizar-test/', sincronizar_test, name='sincronizar_test'),
     path('gestion/', gestion_productos, name='gestion_productos'),
-    
+    path('gestion/editar-productos/<int:product_id>/', admin_editar_detalles.editar_producto, name='editar_producto'),
     
 ]

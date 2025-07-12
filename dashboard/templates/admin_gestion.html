@@ -114,7 +114,10 @@
                             <div class="flex space-x-2">
                                 <!-- Editar producto -->
 
-                                <a href="" class="text-blue-400 hover:text-blue-300">
+                                <!-- <a href="" class="text-blue-400 hover:text-blue-300">
+                                    <i class="fas fa-edit"></i>
+                                </a> -->
+                                <a href="{% url 'dashboard:editar_producto' producto.id %}" class="text-blue-400 hover:text-blue-300">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <!-- Editar imágenes -->
