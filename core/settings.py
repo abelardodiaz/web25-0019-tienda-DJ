@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'products',
     'tasks',
     'tailwind',
-    # 'tema_base_oscuro',
     'setup',
     'dashboard',
     'core',
@@ -196,9 +195,5 @@ NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/account/profile/'       # o el nombre de tu URL: reverse_lazy('home')
 LOGOUT_REDIRECT_URL = '/'      # opcional, para después del logout
-
-# AUTHENTICATION_BACKENDS = [
-#     'core.backends.SafeSetupAuthBackend' if SETUP_MODE else 'django.contrib.auth.backends.ModelBackend',
-# ]
 
 APPEND_SLASH = True
