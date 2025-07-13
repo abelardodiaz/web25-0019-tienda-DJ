@@ -14,29 +14,10 @@ env = environ.Env()
 SECRET_KEY = 'django-insecure-o@5==b%^nw6k9!1i63l1$m0g%__$^zge%$e6(6@-s5j07bzql6'
 DEBUG = True
 ALLOWED_HOSTS = ['192.168.0.5', '192.168.0.8','localhost', '127.0.0.1']
-# SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"  # Usa cookies firmadas en lugar de BD
 
-# core/settings.py (actualizado)
 import os
 
-# Reemplazar la definición existente de SETUP_MODE
-# Reemplazar la función setup_mode por una versión más robusta
-# def setup_mode():
-#     # 1. Verificar variable de entorno
-#     if os.getenv('SETUP_MODE', 'False').lower() == 'true':
-#         return True
-    
-#     # 2. Verificar archivo .env directamente
-#     env_path = os.path.join(BASE_DIR, ".env")
-#     if os.path.exists(env_path):
-#         with open(env_path, "r") as f:
-#             content = f.read()
-#             if "SETUP_MODE=True" in content:
-#                 return True
-    
-#     return False
 
-# SETUP_MODE = setup_mode()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
