@@ -13,7 +13,7 @@ env = environ.Env()
 # SETUP_MODE = env.bool("SETUP_MODE", False) 
 SECRET_KEY = 'django-insecure-o@5==b%^nw6k9!1i63l1$m0g%__$^zge%$e6(6@-s5j07bzql6'
 DEBUG = True
-ALLOWED_HOSTS = ['192.168.0.5', '192.168.0.8','localhost']
+ALLOWED_HOSTS = ['192.168.0.5', '192.168.0.8','localhost', '127.0.0.1']
 # SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"  # Usa cookies firmadas en lugar de BD
 
 # core/settings.py (actualizado)
@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'products',
     'tasks',
     'tailwind',
-    'tema_base_oscuro',
+    # 'tema_base_oscuro',
     'setup',
     'dashboard',
     'core',
