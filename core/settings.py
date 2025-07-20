@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'tailwind',
     'setup',
     'dashboard',
+    'catalogo',
     'core',
     'widget_tweaks',
 ]
