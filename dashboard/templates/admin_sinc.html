@@ -87,7 +87,7 @@
                     {% for producto in productos %}
                     <tr class="border-b border-dark-700 hover:bg-dark-750">
                         <td class="py-3 px-2">
-                            <input type="checkbox" name="productos" value="{{ producto.id }}" class="product-check">
+                            <input type="checkbox" name="productos" value="{{ producto.syscom_id }}" class="product-check">
                         </td>
                         <td class="py-3 px-2">
                             <div class="flex items-center">
@@ -105,7 +105,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="py-3 px-2 text-gray-400">{{ producto.id }}</td>
+                        <td class="py-3 px-2 text-gray-400">{{ producto.syscom_id }}</td>
                         <td class="py-3 px-2">{{ producto.marca }}</td>
                         <!-- <td class="py-3 px-2 font-medium">
                             ${{ producto.precio_especial }} USD
@@ -126,7 +126,7 @@
             </div>
             
             <div class="mt-6 flex justify-end">
-                <button type="submit" 
+                <button type="button" 
                         id="sync-btn"
                         class="bg-accent-500 hover:bg-accent-400 text-dark-900 font-medium py-2 px-6 rounded-lg inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled>
@@ -134,6 +134,14 @@
                 </button>
             </div>
         </form>
+
+        <!-- Barra de progreso -->
+        <div id="progress-container" class="mt-8 hidden">
+            <div class="bg-dark-700 rounded-full h-4">
+                <div id="progress-bar" class="bg-accent-500 h-4 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="text-center mt-2 text-gray-400">0% completado</p>
+        </div>
     </div>
     {% elif request.GET.q or request.GET.ids %}
     <div class="bg-dark-800 rounded-xl p-6 border border-dark-700 text-center py-12">
@@ -171,24 +179,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejar envío de formulario
     const syncForm = document.querySelector('form[method="POST"]');
     if (syncForm) {
-        syncForm.addEventListener('submit', function(e) {
+        syncBtn.addEventListener('click', function() {
             const checkedProducts = document.querySelectorAll('.product-check:checked');
             if (checkedProducts.length === 0) {
-                e.preventDefault();
-                return false;
+                return;
             }
-            
+
+            const ids = Array.from(document.querySelectorAll('.product-check:checked')).map(cb => cb.value);
+            const payload = JSON.stringify({ productos: ids });
+
             syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sincronizando...';
             syncBtn.disabled = true;
-            
-            // Mostrar notificación
-            const toast = document.getElementById('toast');
-            if (toast) {
-                toast.querySelector('p.font-medium').textContent = 'Sincronizando productos';
-                toast.querySelector('p.text-sm').textContent = 'Por favor espera mientras se importan los productos';
-                toast.classList.remove('hidden');
-            }
+
+            // Mostrar contenedor de progreso
+            document.getElementById('progress-container').classList.remove('hidden');
+
+            fetch('{% url "dashboard:start_product_sync" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: payload
+            }).then(res => res.json()).then(data => {
+                if (data.status === 'started') {
+                    pollProgress();
+                } else {
+                    alert(data.message || 'Error iniciando sincronización');
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('Error iniciando sincronización');
+            });
         });
+    }
+
+    function pollProgress() {
+        const interval = setInterval(() => {
+            fetch('{% url "dashboard:product_sync_progress" %}')
+                .then(res => res.json())
+                .then(data => {
+                    const percent = data.total ? (data.processed / data.total) * 100 : 0;
+                    document.getElementById('progress-bar').style.width = `${percent}%`;
+                    document.getElementById('progress-text').textContent = `${Math.round(percent)}% completado (${data.processed}/${data.total})`;
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        syncBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Finalizado';
+                        syncBtn.disabled = false;
+                    }
+                });
+        }, 1000);
     }
 });
 </script>

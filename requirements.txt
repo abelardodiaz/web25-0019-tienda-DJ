@@ -15,3 +15,5 @@ bleach
 django-widget-tweaks
 django_ckeditor_5
 pytz
+langchain_openai
+langchain

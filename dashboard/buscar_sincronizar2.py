@@ -76,7 +76,8 @@ def obtener_productos_syscom(query='', ids=''):
             existencia_slp = existencia_nuevo.get("san_luis_potosi", 0) if isinstance(existencia_nuevo, dict) else 0
             
             productos.append({
-                'id': item.get("producto_id"),
+                # 'id': item.get("producto_id"),  # <-- Eliminar este campo
+                'syscom_id': item.get("producto_id"),
                 'modelo': item.get("modelo"),
                 'titulo': item.get("titulo"),
                 'marca': item.get("marca"),
@@ -103,7 +104,7 @@ def sincronizar_producto(producto_data):
     
     # Crear o actualizar producto principal
     producto, created = Product.objects.update_or_create(
-        syscom_id=producto_data['id'],
+        syscom_id=producto_data['syscom_id'],
         defaults={
             'model': producto_data['modelo'],
             'title': producto_data['titulo'],

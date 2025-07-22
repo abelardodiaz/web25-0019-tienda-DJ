@@ -286,9 +286,19 @@ class Product(models.Model):
         if not self.slug:
             # Aplazar la generación hasta tener PK si es nuevo
             if self.pk is None:
-                super().save(*args, **kwargs)  # Obtener PK
+                super().save(*args, **kwargs)  # Primer INSERT para obtener PK
+
+            # Ahora que tenemos PK generamos el slug
             self.slug = self._generate_slug()
-        super().save(*args, **kwargs)
+
+            # Asegurarnos de que la segunda llamada sea UPDATE, no INSERT
+            kwargs.pop("force_insert", None)
+            kwargs.pop("force_update", None)
+
+            super().save(*args, **kwargs)  # UPDATE con slug
+        else:
+            # Slug ya existe → comportamiento normal
+            super().save(*args, **kwargs)
 
     @property
     def total_stock(self) -> int:

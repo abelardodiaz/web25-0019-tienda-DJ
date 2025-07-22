@@ -70,13 +70,13 @@ def save_syscom_credentials(request):
             return redirect('dashboard:admin_panel')
         
         # Crear o actualizar credenciales
-        cred, created = SyscomCredential.objects.update_or_create(
-            id=SyscomCredential.objects.first().id if SyscomCredential.objects.exists() else None,
-            defaults={
-                'client_id': client_id,
-                'client_secret': client_secret
-            }
-        )
+        cred = SyscomCredential.objects.first()
+        if cred:
+            cred.client_id = client_id
+            cred.client_secret = client_secret
+            cred.save()
+        else:
+            SyscomCredential.objects.create(client_id=client_id, client_secret=client_secret)
         
         messages.success(request, 'Credenciales guardadas correctamente')
         return redirect('dashboard:admin_panel')

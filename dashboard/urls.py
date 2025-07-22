@@ -2,7 +2,7 @@
 from django.urls import path
 from . import views
 
-from dashboard.buscar_sincronizar import sincronizar_productos, sincronizar_test
+from dashboard.buscar_sincronizar import sincronizar_productos, sincronizar_test, start_product_sync, get_product_sync_progress
 from dashboard.admin_gestion import gestion_productos, sincronizar_inventarios, get_sync_progress
 from dashboard import admin_editar_detalles
 
@@ -20,6 +20,8 @@ urlpatterns = [
     path('admin/renew-syscom-token/', views.renew_syscom_token, name='renew_syscom_token'),
     path('tipo-cambio/', views.tipo_cambio, name='tipo_cambio'),
     path('sincronizar/', sincronizar_productos, name='sincronizar'),
+    path('sincronizar/start/', start_product_sync, name='start_product_sync'),
+    path('sincronizar/progress/', get_product_sync_progress, name='product_sync_progress'),
     path('sincronizar-test/', sincronizar_test, name='sincronizar_test'),
     path('gestion/', gestion_productos, name='gestion_productos'),
     path('gestion/editar-productos/<int:product_id>/', admin_editar_detalles.editar_producto, name='editar_producto'),
