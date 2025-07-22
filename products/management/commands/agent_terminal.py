@@ -262,6 +262,7 @@ class Command(BaseCommand):
             base_url="https://api.deepseek.com/v1",  # DeepSeek API endpoint
             temperature=0,  # Set to 0 for strict adherence
             max_tokens=400,
+            streaming=True,
         )
 
         # Memory for conversation context; incluye 'last_results' como memoria

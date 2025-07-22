@@ -5,6 +5,7 @@ from django.db.models import Q, Sum, OuterRef, Subquery, DecimalField, Prefetch,
 from products.models import Product, Price, BranchStock, Branch, Category, Brand  # Asegúrate de importar los modelos necesarios
 from django.http import JsonResponse
 from .agent import run_agent
+from django.http import StreamingHttpResponse
 
 SLP_SLUG = "san_luis_potosi"
 
@@ -129,20 +130,22 @@ def detalle_producto(request, slug):
 def agente_chat(request):
     if request.method == 'POST':
         if request.POST.get('clear_chat'):
-            # Reset session and add greeting
             initial_msg = "¡Hola! Soy <strong>TU ASISTENTE CHIDO</strong>. ¿En qué te ayudo hoy?<br>Di algo como 'busca cámaras' para empezar."
             request.session['chat_history'] = [{'type': 'agent', 'content': initial_msg}]
-            request.session.pop('last_results_ids', None)
+            request.session.pop('last_search_ids', None)
             request.session.pop('last_product_details', None)
             return JsonResponse({'status': 'cleared', 'greeting': initial_msg})
-        user_input = request.POST.get('mensaje', '')
-        if not user_input:
-            return JsonResponse({'respuesta': 'Por favor, ingresa un mensaje.'})
-        response = run_agent(request, user_input)
-        return JsonResponse({'respuesta': response})
+        
+        user_input = request.POST.get('mensaje', '').strip()
+        if user_input:
+            response = run_agent(request, user_input)
+            return JsonResponse({'respuesta': response})
+        
+    # Handle GET requests for initial page load
     historial = request.session.get('chat_history', [])
     if not historial:
         initial_msg = "¡Hola! Soy <strong>TU ASISTENTE CHIDO</strong>. ¿En qué te ayudo hoy?<br>Di algo como 'busca cámaras' para empezar."
         historial = [{'type': 'agent', 'content': initial_msg}]
         request.session['chat_history'] = historial
+    
     return render(request, 'catalogo/agente.html', {'historial': historial})
