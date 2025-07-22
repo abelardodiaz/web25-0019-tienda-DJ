@@ -32,10 +32,10 @@
     <div id="chat-window">
         {% for msg in historial %}
             <div class="message {% if msg.type == 'user' %}user-message{% else %}agent-message{% endif %}">
-                <strong>{% if msg.type == 'user' %}Tú:{% else %}Asistente:{% endif %}</strong> {{ msg.content }}
+                <strong>{% if msg.type == 'user' %}Tú:{% else %}Asistente:{% endif %}</strong> {{ msg.content|safe }}
             </div>
         {% endfor %}
-        <div id="loading">Asistente está pensando...</div>
+        <div id="loading" style="display: none;">Asistente está pensando...</div>
     </div>
     <form id="chat-form">
         {% csrf_token %}
@@ -67,11 +67,20 @@
             const userMsg = $('input[name="mensaje"]').val();
             if (!userMsg.trim()) return;
             const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
-            $('#chat-window').append('<div class="message user-message"><strong>Tú:</strong> ' + userMsg + '</div>');
+            const isDark = $('#chat-container').hasClass('dark');
+
+            // --- Append User Message ---
+            const userMsgDiv = $('<div class="message user-message"><strong>Tú:</strong> </div>').append(document.createTextNode(userMsg));
+            if (isDark) userMsgDiv.addClass('dark');
+            $('#chat-window').append(userMsgDiv);
             $('input[name="mensaje"]').val('');
+
+            // --- Append Temp Loading Message ---
             const temp = $('<div id="tempLoading" class="message agent-message"><em>⏳ Pensando...</em></div>');
+            if (isDark) temp.addClass('dark');
             $('#chat-window').append(temp);
             $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+
             $.ajax({
                 type: 'POST',
                 url: '{% url "agente_chat" %}',
@@ -79,8 +88,11 @@
                 dataType: 'json',
                 success: function(data) {
                     $('#tempLoading').remove();
+                    // Revert to simple line break replacement
                     var formattedResponse = data.respuesta.replace(/\n/g, '<br>');
-                    $('#chat-window').append('<div class="message agent-message"><strong>Asistente:</strong> ' + formattedResponse + '</div>');
+                    const agentMsgDiv = $('<div class="message agent-message"></div>').html('<strong>Asistente:</strong> ' + formattedResponse);
+                    if (isDark) agentMsgDiv.addClass('dark');
+                    $('#chat-window').append(agentMsgDiv);
                     $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
                 },
                 error: function(xhr, status, error) {
@@ -108,7 +120,11 @@
                 success: function(data) {
                     $('#confirmModal').addClass('hidden');
                     // Reset chat window with greeting
-                    $('#chat-window').html('<div class="message agent-message"><strong>Asistente:</strong> ' + data.greeting + '</div>');
+                    var greetingDiv = $('<div class="message agent-message"></div>').html('<strong>Asistente:</strong> ' + data.greeting);
+                    if ($('#chat-container').hasClass('dark')) {
+                        greetingDiv.addClass('dark');
+                    }
+                    $('#chat-window').html(greetingDiv);
                     // Scroll to bottom
                     $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
                 }

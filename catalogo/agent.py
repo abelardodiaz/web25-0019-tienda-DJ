@@ -16,6 +16,8 @@ import warnings
 import pytz
 from datetime import datetime
 import pathlib
+from functools import reduce
+import operator
 
 load_dotenv()
 
@@ -55,9 +57,14 @@ def run_agent(request, user_input):
 
         logger.debug(f"Tokens extracted for filtering: {tokens}")
 
-        q_obj = Q()
-        for tok in tokens:
-            q_obj |= Q(title__icontains=tok) | Q(model__icontains=tok) | Q(description__icontains=tok) | Q(brand__name__icontains=tok)
+        # Construir filtro dinámico que coincida con TODOS los tokens (AND)
+        # Cada token debe estar en al menos uno de los campos.
+        clauses = [
+            (Q(title__icontains=tok) | Q(model__icontains=tok) | Q(description__icontains=tok) | Q(brand__name__icontains=tok))
+            for tok in tokens
+        ]
+        q_obj = reduce(operator.and_, clauses) if clauses else Q()
+
 
         products = (
             Product.objects.filter(q_obj)
@@ -178,51 +185,88 @@ def run_agent(request, user_input):
 
     react_prompt = PromptTemplate.from_template(
         """Responde SIEMPRE en ESPAÑOL. Eres un asistente de catálogo para una tienda en línea.
-            Cuando el usuario pregunte por productos:
-            1. Usa search_products.
-            2. Devuelve los resultados numerados del 1 al 5 (si hay) con título, marca, categorías, precio y stock SLP.
-            3. Si el usuario pide más detalles de "el 2", "producto 5", "detalles del tres" o números en palabras (convierte 'cinco' a 5), llama get_product_details con ese número. En la respuesta, muestra solo un resumen corto + features clave, y pregunta '¿Quieres la descripción completa? Di sí o más'.
-            4. Si el usuario dice 'si', 'sí' o 'más' después de ofrecer descripción completa, muestra DIRECTAMENTE la 'description' del último producto en un formato simple, usando la información de {last_product_details}. Usa Thought → Final Answer SIN Action, ya que no necesitas herramientas. Recuerda del historial.
-            5. Si no hay búsqueda previa, pídele al usuario que busque primero.
+
+            OBJETIVOS PRINCIPALES:
+            - Ayudar al usuario a BUSCAR productos.
+            - Mostrar DETALLES resumidos de un producto concreto.
+            - COMPARAR dos productos listados.
+            - Proporcionar AYUDA con ejemplos cuando el usuario lo pida.
+
+            ------------------- FLUJO ESPERADO -------------------
+            1. BÚSQUEDA DE PRODUCTOS
+               a. Usa la herramienta `search_products`.
+               b. Responde con una lista numerada (1-5) con el siguiente formato EXACTO (sin markdown):
+
+               1. <strong>Título del Producto 1</strong>
+               Marca: XXX
+               Categoría: YYY
+               Precio: $123.45
+               Stock SLP: 10
+
+               2. <strong>Título del Producto 2</strong>
+               Marca: ... (etc.)
+
+               c. Tras la lista añade SIEMPRE esta línea (sin punto al final):
+               ¿Necesitas más detalles de algún producto? Di por ejemplo "detalles del 2". También puedes comparar productos con "compara 1 y 3" o escribir "ayuda".
+
+            2. DETALLES DE UN PRODUCTO
+               a. Detecta peticiones como "detalles del 3", "más info del dos", etc.
+               b. Usa `get_product_details` con ese número.
+               c. Responde con: Título (en <strong>), Resumen, Lista de features, Precio, Stock SLP, Categorías.
+               d. Termina con: Puedes buscar otra cosa, comparar productos o pedir ayuda.
+
+            3. COMPARAR PRODUCTOS
+               a. Detecta frases como "compara 1 y 4", "comparar dos y cinco".
+               b. Llama `get_product_details` PARA CADA NÚMERO (dos llamadas en total) y guarda las Observations.
+               c. Responde una tabla o lista que contraste: Título, Precio, Stock SLP, Marca y Categoría de ambos.
+               d. Cierra con: Puedes buscar otra cosa, pedir más detalles o ayuda.
+
+            4. AYUDA
+               Si el usuario escribe "ayuda", responde con ejemplos claros de:
+               • Buscar: "busca cámaras IP"
+               • Detalles: "detalles del 2"
+               • Comparar: "compara 1 y 5"
+               • Ayuda: "ayuda"
+
+            --------------------------------------------------------
 
             FORMATO estricto para el razonamiento de herramientas:
-            
+
             You have access to the following tools:
- 
             {tools}
- 
-            Use the following format EXACTLY. NO inventes Observations; el sistema las proporcionará. Después de escribir la línea "Action Input: ..." DEBES DETENERTE POR COMPLETO: no agregues texto, ni ejemplos, ni la palabra '(DETENTE)'. NO incluyas la palabra '(DETENTE)'. No continúes con Thought ni Final Answer hasta que el sistema envíe la Observation.
 
-            Question: the input question you must answer
-            Thought: you should always think about what to do
-            Action: the action to take, should be one of [{tool_names}]
-            Action Input: the input to the action
-            Observation: the result of the action
-            ... (this Thought/Action/Action Input/Observation can repeat N times)
+            Usa EXACTAMENTE este formato (sin añadir texto extra):
+
+            Question: el mensaje del usuario
+            Thought: tu razonamiento paso a paso
+            Action: la acción a ejecutar, debe ser una de [{tool_names}]
+            Action Input: el input de la acción
+            Observation: resultado de la acción
+            ... (puede repetirse)
             Thought: I now know the final answer
-            Final Answer: the final answer to the original input question
+            Final Answer: tu respuesta final al usuario
 
-            Example of FIRST STEP (con herramienta):
+            Ejemplo del PRIMER PASO:
             Thought: Debo buscar productos.
             Action: search_products
             Action Input: "routers mikrotik"
-            [Aquí te detienes. El sistema llamará a la herramienta y te entregará "Observation: ..." en la siguiente interacción]
+            [DETENTE] (el sistema insertará Observation)
 
-            Ejemplo de ÚLTIMO PASO (cuando ya tienes la info):
+            Ejemplo del ÚLTIMO PASO:
             Thought: Ya conozco la respuesta final.
-            Final Answer: [lista numerada con título, marca, etc.]
+            Final Answer: 1. ...
 
-            ¡Sigue ESTE formato EXACTAMENTE! Ni una palabra más ni menos.
+            ¡Sigue este formato al pie de la letra!
 
-            Historial de la conversación (para contexto):
+            Historial para contexto:
             {chat_history}
 
-            Últimos IDs de productos encontrados (para referencia numérica):
+            Últimos IDs:
             {last_results}
 
-            Últimos detalles de producto (para descripción completa):
+            Últimos detalles:
             {last_product_details}
- 
+
             ¡Comencemos!
 
             Question: {input}
