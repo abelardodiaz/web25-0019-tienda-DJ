@@ -69,9 +69,12 @@ urlpatterns = [
     path('password-change/', CustomPasswordChangeView.as_view(), name='password_change'),
     path('users/', include('users.urls', namespace='users')),
     
+    # Endpoints necesarios para django_ckeditor_5 (subida/browse de archivos)
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
     
-    path('producto/<int:pk>/', catalogo_views.detalle_producto, name='detalle_producto'),
+    path('producto/<slug:slug>/', catalogo_views.detalle_producto, name='detalle_producto'),
     
     path('', catalogo_views.catalogo_publico, name='home'),
     path('catalogo/', catalogo_views.catalogo_publico, name='catalogo'),
+    path('agente/', catalogo_views.agente_chat, name='agente_chat'),
 ]

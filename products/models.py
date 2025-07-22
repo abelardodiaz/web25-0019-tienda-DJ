@@ -30,6 +30,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 import bleach
+from django.utils.text import slugify
 
 # ------------------------------------------------------------------
 # ExchangeRate — tabla independiente (MANTENIDA)
@@ -104,6 +105,7 @@ class SyscomCredential(models.Model):
 class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name=_("Marca"))
     logo_url = models.URLField(max_length=500, blank=True, verbose_name=_("Logo URL"))
+    slug = models.SlugField(max_length=255, unique=True, blank=True, verbose_name=_("Slug"))
 
     class Meta:
         verbose_name = _("Marca")
@@ -112,6 +114,17 @@ class Brand(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            unique_slug = self.slug
+            num = 1
+            while Brand.objects.filter(slug=unique_slug).exists():
+                unique_slug = f"{self.slug}-{num}"
+                num += 1
+            self.slug = unique_slug
+        super().save(*args, **kwargs)
 
 
 # ------------------------------------------------------------------
@@ -124,6 +137,8 @@ class Category(models.Model):
         validators=[MinValueValidator(1)],
         verbose_name=_("Nivel")
     )
+    slug = models.SlugField(max_length=255, unique=True, blank=True, verbose_name=_("Slug"))
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.SET_NULL, verbose_name=_("Categoría padre"))
 
     class Meta:
         verbose_name = _("Categoría")
@@ -132,6 +147,17 @@ class Category(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} (Nivel {self.level})"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+            unique_slug = self.slug
+            num = 1
+            while Category.objects.filter(slug=unique_slug).exists():
+                unique_slug = f"{self.slug}-{num}"
+                num += 1
+            self.slug = unique_slug
+        super().save(*args, **kwargs)
 
 
 # ------------------------------------------------------------------
@@ -182,6 +208,7 @@ class Product(models.Model):
         blank=True, 
         verbose_name=_("Link Privado")
     )
+    slug = models.SlugField(max_length=255, unique=True, null=False, blank=False, verbose_name=_("Slug"))
     
     # Relaciones
     brand = models.ForeignKey(
@@ -233,6 +260,36 @@ class Product(models.Model):
     def __str__(self) -> str:
         return f"{self.title} ({self.model})"
 
+    def _generate_slug(self):
+        """Genera un slug basado en marca, modelo y syscom_id"""
+        parts = []
+        if self.brand and self.brand.name:
+            parts.append(self.brand.name)
+        if self.model:
+            parts.append(self.model)
+        # Usar el ID interno (pk) en lugar de syscom_id
+        if self.pk:
+            parts.append(str(self.pk))
+        base_slug = slugify("-".join(parts))
+        if not base_slug:
+            base_slug = slugify(f"producto-{self.pk or ''}")
+        unique_slug = base_slug
+        num = 1
+        # Asegurar unicidad excluyendo el propio objeto
+        while Product.objects.filter(slug=unique_slug).exclude(pk=self.pk).exists():
+            unique_slug = f"{base_slug}-{num}"
+            num += 1
+        return unique_slug
+
+    def save(self, *args, **kwargs):
+        # Generar slug si no existe
+        if not self.slug:
+            # Aplazar la generación hasta tener PK si es nuevo
+            if self.pk is None:
+                super().save(*args, **kwargs)  # Obtener PK
+            self.slug = self._generate_slug()
+        super().save(*args, **kwargs)
+
     @property
     def total_stock(self) -> int:
         """Existencia total en todas las sucursales"""
@@ -240,25 +297,34 @@ class Product(models.Model):
             total=models.Sum('quantity')
         )['total'] or 0
 
-        description = models.TextField()
-
     def clean_description(self):
         # Permitir solo estas etiquetas y atributos
         allowed_tags = [
             'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
             'strong', 'em', 'b', 'i', 'u', 's', 
-            'ul', 'ol', 'li', 'hr', 'br', 'img'
+            'ul', 'ol', 'li', 'hr', 'br', 'img',
+            'table', 'tr', 'td', 'th', 'tbody', 'thead', 'tfoot',
+            'div', 'span', 'section',  # Nuevos: section, div, span para estructuras
         ]
         
         allowed_attributes = {
-            'img': ['src', 'alt', 'width', 'height']
+            'img': ['src', 'alt', 'width', 'height', 'style', 'class'],  # Permite estilos y clases en imgs
+            'div': ['style', 'class'],  # Permite estilos y clases en divs
+            'span': ['style', 'class'],
+            'table': ['style', 'class', 'border', 'cellpadding', 'cellspacing'],
+            'td': ['style', 'class', 'colspan', 'rowspan'],
+            'tr': ['style', 'class'],
+            'p': ['style', 'class'],  # Permite estilos en párrafos
+            'section': ['class', 'style'],  # Para secciones
+            '*': ['style', 'class']  # Permite estilo y clase en TODOS los tags (cuidado: amplío para Syscom)
         }
         
         return bleach.clean(
             self.description or '',
             tags=allowed_tags,
             attributes=allowed_attributes,
-            strip=True
+            strip=False,  # Cambiado a False para NO eliminar tags no permitidos, solo sanitizar
+            strip_comments=False
         )
 
 
@@ -266,11 +332,11 @@ class Product(models.Model):
 # ------------------------------------------------------------------
 # Precios (Relación 1:1 con Producto)
 # ------------------------------------------------------------------
+
 class Price(models.Model):
     product = models.OneToOneField(
         Product,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='prices',
         verbose_name=_("Producto")
     )
@@ -306,6 +372,13 @@ class Price(models.Model):
         default=False,
         verbose_name=_("Precio Editado Manualmente")
     )
+
+    class Meta:
+        verbose_name = _("Precio")
+        verbose_name_plural = _("Precios")
+
+    def __str__(self) -> str:
+        return f"Precios de {self.product}"
 
     class Meta:
         verbose_name = _("Precio")

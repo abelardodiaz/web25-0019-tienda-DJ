@@ -1,0 +1,238 @@
+<!-- file:templates/catalogo/cat_detalle.html -->
+<!-- file:templates/catalogo/cat_detalle.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ producto.title }} | TUTIENDA.com{% endblock %}
+
+{% block content %}
+<!-- Ruta de navegación -->
+<div class="text-gray-400 text-sm mb-6">
+    <a href="{% url 'home' %}" class="hover:text-white">Inicio</a> > 
+    {% for categoria in breadcrumb_categories %}
+        <a href="{% url 'home' %}?categoria={{ categoria.slug }}" class="hover:text-white">{{ categoria.name }}</a> > 
+    {% endfor %}
+    <span class="text-white">{{ producto.title }}</span>
+</div>
+
+<!-- Vista detallada del producto -->
+<div class="flex flex-col lg:flex-row gap-6">
+    <!-- Imágenes del producto -->
+    <div class="lg:w-1/2 mb-6 lg:mb-0">
+        <!-- Carousel container -->
+        <div id="carousel" class="relative bg-dark-800 rounded-xl p-4 mb-4">
+            <!-- Images -->
+            <div class="carousel-images relative overflow-hidden">
+                <!-- Main image -->
+                {% if producto.main_image %}
+                    <img src="{{ producto.main_image }}" alt="{{ producto.title }}" class="w-full h-auto rounded-xl carousel-item active">
+                {% else %}
+                    <div class="flex items-center justify-center w-full h-96 bg-gray-200 border-2 border-dashed rounded-xl carousel-item active">
+                        <i class="fas fa-image text-4xl text-gray-400"></i>
+                    </div>
+                {% endif %}
+                <!-- Additional images -->
+                {% for imagen in producto.additional_images.all %}
+                    {% if imagen.type == 'galeria' %}
+                        <img src="{{ imagen.url }}" alt="Imagen adicional {{ forloop.counter }}" class="w-full h-auto rounded-xl carousel-item">
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <!-- Navigation buttons -->
+            <button id="prev" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-dark-700 p-2 rounded-full hover:bg-accent-500">
+                <i class="fas fa-chevron-left text-white"></i>
+            </button>
+            <button id="next" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-dark-700 p-2 rounded-full hover:bg-accent-500">
+                <i class="fas fa-chevron-right text-white"></i>
+            </button>
+        </div>
+        <!-- Thumbnails -->
+        <div class="grid grid-cols-4 gap-4">
+            {% for imagen in producto.additional_images.all %}
+                {% if imagen.type == 'galeria' %}
+                    <div class="bg-dark-700 rounded-lg overflow-hidden cursor-pointer thumbnail" data-index="{{ forloop.counter }}">
+                        <img src="{{ imagen.url }}" alt="Thumbnail {{ forloop.counter }}" class="w-full h-24 object-cover">
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Información del producto -->
+    <div class="lg:w-1/2">
+        <div class="bg-dark-800 rounded-xl p-6 h-full">
+            <!-- Marca y título -->
+            <div class="flex items-center mb-4">
+                {% if producto.brand_logo %}
+                    <img src="{{ producto.brand_logo }}" alt="{{ producto.brand.name }}" 
+                         class="w-10 h-10 object-contain mr-3">
+                {% endif %}
+                <h1 class="text-2xl font-bold">{{ producto.title }}</h1>
+            </div>
+            
+            <!-- Modelo -->
+            <p class="text-gray-400 text-sm mb-4">Modelo: {{ producto.model }}</p>
+            
+            <!-- Precio -->
+            <div class="mb-6">
+                <p class="text-accent-500 font-bold text-3xl">
+                    ${{ producto.prices.discount|floatformat:2 }} USD
+                </p>
+            </div>
+            
+            <!-- Existencia -->
+            <div class="mb-6">
+            <p class="text-gray-400">
+                {% if producto.slp_stock_quantity > 0 %}
+                    <span class="text-green-500 font-medium">
+                        {{ producto.slp_stock_quantity }} disponibles
+                    </span> en San Luis Potos&iacute;
+                {% else %}
+                    <span class="text-red-500 font-medium">Agotado</span>
+                {% endif %}
+            </p>
+            </div>
+            
+            
+            <!-- Garantía -->
+            {% if producto.warranty %}
+            <div class="mb-6">
+                <h3 class="font-semibold text-lg mb-2">Garantía</h3>
+                <p class="text-gray-300">{{ producto.warranty }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Características -->
+            <div class="mb-6">
+                <h3 class="font-semibold text-lg mb-2">Características</h3>
+                <ul class="list-disc pl-5 text-gray-300">
+                    {% for feature in producto.features.all %}
+                        <li>{{ feature.text }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <!-- Botón de añadir al carrito -->
+            <button class="w-full bg-accent-500 text-dark-900 py-3 px-4 rounded-xl font-medium hover:bg-accent-400 transition">
+                <i class="fas fa-shopping-cart mr-2"></i>
+                Añadir al carrito
+            </button>
+        </div>
+    </div>
+</div>
+<!-- <section de detalle -->
+ <section class="mt-16 descripcion">
+    <!-- Descripción -->
+    <div class="mb-6" style="max-width: 700px;">
+        <h3 class="font-semibold text-lg mb-2">Descripción</h3>
+        <p class="text-gray-300">{{ producto.description|safe }}</p>
+    </div> 
+ </section>
+ 
+<!-- Sección de productos relacionados -->
+<!-- <section class="mt-16 related-products">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Productos Relacionados</h2>
+        <a href="#" class="text-gray-400 hover:text-accent-500 transition">Ver todos</a>
+    </div> -->
+    
+    <!-- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"> -->
+        <!-- Ejemplo de producto relacionado (repetir estructura) -->
+        <!-- <div class="product-card bg-dark-800 rounded-xl p-4 transition-all duration-300 border border-dark-700 hover:border-accent-500/30">
+            <div class="relative">
+                <img src="https://via.placeholder.com/300" alt="Producto relacionado" 
+                     class="w-full h-48 object-cover rounded-xl mb-4">
+                <button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center hover:bg-accent-500">
+                    <i class="fas fa-heart text-gray-300"></i>
+                </button>
+            </div>
+            <div class="mb-2">
+                <h3 class="font-semibold text-lg">Auriculares Inalámbricos Pro</h3>
+                <p class="text-gray-400 text-sm">Sony</p>
+            </div>
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-accent-500 font-bold text-xl">$89.99 USD</p>
+                    <p class="text-gray-400 text-sm mt-1">12 disponibles</p>
+                </div>
+                <button class="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center hover:bg-accent-400 transition">
+                    <i class="fas fa-plus text-dark-900"></i>
+                </button>
+            </div>
+        </div> -->
+        <!-- ... más productos relacionados ... -->
+    <!-- </div>
+</section> -->
+{% endblock %}
+
+{% block extra_js %}
+<style>
+  .carousel-item {display:none;}
+  .carousel-item.active {display:block;}
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const carousel = document.getElementById('carousel');
+        const images = carousel.querySelectorAll('.carousel-item');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        let currentIndex = 0;
+        let rotationInterval;
+
+        function showImage(index) {
+            images.forEach((img, i) => {
+                img.classList.toggle('active', i === index);
+            });
+            currentIndex = index;
+        }
+
+        function nextImage() {
+            currentIndex = (currentIndex + 1) % images.length;
+            showImage(currentIndex);
+        }
+
+        function prevImage() {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+            showImage(currentIndex);
+        }
+
+        function startRotation() {
+            rotationInterval = setInterval(nextImage, 3000); // Rotate every 3 seconds
+        }
+
+        function stopRotation() {
+            clearInterval(rotationInterval);
+        }
+
+        // Initial show
+        showImage(0);
+        startRotation();
+
+        // Events
+        prevBtn.addEventListener('click', () => {
+            stopRotation();
+            prevImage();
+            startRotation();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            stopRotation();
+            nextImage();
+            startRotation();
+        });
+
+        thumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => {
+                stopRotation();
+                showImage(index + 1); // +1 because 0 is main image
+                startRotation();
+            });
+        });
+
+        // Pause on hover
+        carousel.addEventListener('mouseenter', stopRotation);
+        carousel.addEventListener('mouseleave', startRotation);
+    });
+</script>
+{% endblock %} 

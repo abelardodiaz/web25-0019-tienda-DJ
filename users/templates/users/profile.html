@@ -1,0 +1,396 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="bg-gray-900 text-gray-100">
+<head>
+    <meta charset="utf-8">
+    <title>Mi perfil</title>
+    <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Protección XSS y Clickjacking -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data:; font-src 'self' https://cdnjs.cloudflare.com;">
+    <meta name="referrer" content="no-referrer">
+    <meta name="x-frame-options" content="DENY">
+</head>
+<body class="min-h-screen p-8">
+    <!-- Modal de confirmación -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Confirmar cambio de contraseña</h3>
+            <p class="mb-6">¿Estás seguro que deseas cambiar tu contraseña?</p>
+            <div class="flex justify-end space-x-4">
+                <button id="cancelChange" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg">
+                    Cancelar
+                </button>
+                <button id="confirmChange" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de resultado -->
+    <div id="resultModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+            <h3 id="resultTitle" class="text-xl font-bold mb-4"></h3>
+            <p id="resultMessage" class="mb-6"></p>
+            <div class="flex justify-end">
+                <button id="closeResultModal" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-lg">
+        <h1 class="text-3xl font-bold mb-6">Hola, {{ user.username }}</h1>
+        
+        <div class="mb-6 space-y-4">
+            <p class="text-lg">
+                <span class="text-gray-400">Tu rol:</span> 
+                <strong class="capitalize">
+                    {% if user.role == 'ADMIN' %}
+                        <span class="text-green-500">Administrador</span>
+                    {% elif user.role == 'STAFF' %}
+                        <span class="text-blue-500">Staff</span>
+                    {% else %}
+                        <span class="text-yellow-500">{{ user.role|lower|title }}</span>
+                    {% endif %}
+                </strong>
+            </p>
+            <p class="text-lg"><span class="text-gray-400">Correo:</span> <strong>{{ user.email }}</strong></p>
+            <p class="text-lg">
+                <span class="text-gray-400">Último inicio:</span> 
+                <strong>{{ user.last_login|date:"d/m/Y H:i"|default:"Primer inicio" }}</strong>
+            </p>
+        </div>
+
+        <!-- Botón para mostrar formulario -->
+        <div class="mb-6">
+            <button id="showPasswordForm" 
+                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition">
+                <i class="fas fa-key mr-2"></i> Cambiar contraseña
+            </button>
+        </div>
+
+        <!-- Formulario para cambiar contraseña (oculto inicialmente) -->
+        <div id="passwordForm" class="hidden mb-8 p-6 bg-gray-750 rounded-lg">
+            <h2 class="text-xl font-bold mb-4">Cambiar contraseña</h2>
+            <form id="changePasswordForm">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <!-- Contraseña actual -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Contraseña actual</label>
+                        <div class="relative">
+                            <input type="password" name="old_password" id="old_password" required
+                                   class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="old_password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Nueva contraseña -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Nueva contraseña</label>
+                        <div class="relative">
+                            <input type="password" name="new_password1" id="new_password1" required
+                                   class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="new_password1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="password-strength" class="mt-2 text-sm">
+                            <div class="flex items-center mb-1">
+                                <span id="length-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                                <span>Mínimo 8 caracteres</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span id="uppercase-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                                <span>Al menos 1 mayúscula</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span id="number-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                                <span>Al menos 1 número</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span id="special-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                                <span>Al menos 1 carácter especial (@$!%*?&)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Confirmar nueva contraseña -->
+                    <div>
+                        <label class="block text-gray-400 mb-2">Confirmar nueva contraseña</label>
+                        <div class="relative">
+                            <input type="password" name="new_password2" id="new_password2" required
+                                   class="w-full bg-gray-700 text-white rounded-lg py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="new_password2">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="password-match" class="mt-2 text-sm text-red-500 hidden">
+                            <i class="fas fa-exclamation-circle mr-1"></i> Las contraseñas no coinciden
+                        </div>
+                    </div>
+                    
+                    <div class="pt-2">
+                        <button type="button" id="requestChange"
+                                class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled>
+                            <i class="fas fa-check-circle mr-2"></i> Solicitar cambio
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="flex flex-wrap gap-4">
+            <a href="{% url 'dashboard:dashboard' %}" 
+               class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition">
+                <i class="fas fa-tachometer-alt mr-2"></i> Ir al Dashboard
+            </a>
+            
+            <form method="post" action="{% url 'logout' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const showPasswordFormBtn = document.getElementById('showPasswordForm');
+            const passwordForm = document.getElementById('passwordForm');
+            const requestChangeBtn = document.getElementById('requestChange');
+            const confirmModal = document.getElementById('confirmModal');
+            const resultModal = document.getElementById('resultModal');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            const closeResultModal = document.getElementById('closeResultModal');
+            const cancelChangeBtn = document.getElementById('cancelChange');
+            const confirmChangeBtn = document.getElementById('confirmChange');
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            
+            // Variables para almacenar datos del formulario
+            let formData = null;
+            let isPasswordValid = false;
+            let passwordsMatch = false;
+
+            // Mostrar formulario
+            showPasswordFormBtn.addEventListener('click', function() {
+                passwordForm.classList.toggle('hidden');
+                if (!passwordForm.classList.contains('hidden')) {
+                    showPasswordFormBtn.classList.add('hidden');
+                }
+            });
+
+            // Función para mostrar/ocultar contraseña
+            document.querySelectorAll('.toggle-password').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const passwordInput = document.getElementById(targetId);
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // Cambiar icono
+                    this.querySelector('i').classList.toggle('fa-eye');
+                    this.querySelector('i').classList.toggle('fa-eye-slash');
+                });
+            });
+
+            // Validación en tiempo real de nueva contraseña
+            document.getElementById('new_password1').addEventListener('input', function() {
+                validatePassword(this.value);
+                checkPasswordMatch();
+                updateSubmitButton();
+            });
+
+            // Validación en tiempo real de confirmación
+            document.getElementById('new_password2').addEventListener('input', function() {
+                checkPasswordMatch();
+                updateSubmitButton();
+            });
+
+            // Función para validar requisitos de contraseña
+            function validatePassword(password) {
+                // Longitud mínima
+                const lengthValid = password.length >= 8;
+                document.getElementById('length-check').className = lengthValid ? 
+                    'text-green-500 mr-2' : 'text-red-500 mr-2';
+                document.getElementById('length-check').innerHTML = lengthValid ? 
+                    '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+                
+                // Mayúsculas
+                const uppercaseValid = /[A-Z]/.test(password);
+                document.getElementById('uppercase-check').className = uppercaseValid ? 
+                    'text-green-500 mr-2' : 'text-red-500 mr-2';
+                document.getElementById('uppercase-check').innerHTML = uppercaseValid ? 
+                    '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+                
+                // Números
+                const numberValid = /[0-9]/.test(password);
+                document.getElementById('number-check').className = numberValid ? 
+                    'text-green-500 mr-2' : 'text-red-500 mr-2';
+                document.getElementById('number-check').innerHTML = numberValid ? 
+                    '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+                
+                // Caracteres especiales
+                const specialValid = /[@$!%*?&]/.test(password);
+                document.getElementById('special-check').className = specialValid ? 
+                    'text-green-500 mr-2' : 'text-red-500 mr-2';
+                document.getElementById('special-check').innerHTML = specialValid ? 
+                    '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+                
+                // Verificar si todos los requisitos se cumplen
+                isPasswordValid = lengthValid && uppercaseValid && numberValid && specialValid;
+            }
+
+            // Función para verificar si las contraseñas coinciden
+            function checkPasswordMatch() {
+                const password1 = document.getElementById('new_password1').value;
+                const password2 = document.getElementById('new_password2').value;
+                
+                if (password1 && password2) {
+                    passwordsMatch = password1 === password2;
+                    document.getElementById('password-match').classList.toggle('hidden', passwordsMatch);
+                } else {
+                    passwordsMatch = false;
+                    document.getElementById('password-match').classList.add('hidden');
+                }
+            }
+
+            // Función para actualizar estado del botón de envío
+            function updateSubmitButton() {
+                requestChangeBtn.disabled = !(isPasswordValid && passwordsMatch);
+            }
+
+            // Solicitar cambio (mostrar modal de confirmación)
+            requestChangeBtn.addEventListener('click', function() {
+                // Validar que las contraseñas coincidan
+                if (!passwordsMatch) {
+                    showResult('Error', 'Las nuevas contraseñas no coinciden', 'text-red-500');
+                    return;
+                }
+                
+                // Validar requisitos de contraseña
+                if (!isPasswordValid) {
+                    showResult('Error', 'La nueva contraseña no cumple con los requisitos de seguridad', 'text-red-500');
+                    return;
+                }
+                
+                // Recoger datos del formulario
+                formData = new FormData(changePasswordForm);
+                
+                // Mostrar modal de confirmación
+                confirmModal.classList.remove('hidden');
+            });
+
+ 
+            // Confirmar cambio (enviar datos)
+            confirmChangeBtn.addEventListener('click', async function() {
+                confirmModal.classList.add('hidden');
+                
+                try {
+                    const formData = new FormData(changePasswordForm);
+                    const urlParams = new URLSearchParams();
+                    
+                    for (const [key, value] of formData.entries()) {
+                        if (key !== 'csrfmiddlewaretoken') {
+                            urlParams.append(key, value);
+                        }
+                    }
+
+                    const response = await fetch("{% url 'password_change' %}", {
+                        method: 'POST',
+                        body: urlParams,
+                        headers: {
+                            'X-CSRFToken': "{{ csrf_token }}",
+                            'X-Requested-With': 'XMLHttpRequest'  // Importante!
+                        },
+                        credentials: 'same-origin'
+                    });
+                    
+            const data = await response.json();
+                  
+                  if (data.success) {
+                      showResult('Éxito', data.message, 'text-green-500');
+                      changePasswordForm.reset();
+                      passwordForm.classList.add('hidden');
+                      showPasswordFormBtn.classList.remove('hidden');
+                      resetPasswordValidations();
+                  } else {
+                      let errorMsg = 'Error al cambiar la contraseña';
+                      
+                      // NEW: Handle specific field errors
+                      if (data.errors) {
+                          // Handle old_password error specifically
+                          if (data.errors.old_password) {
+                              errorMsg = data.errors.old_password[0].message;
+                          } 
+                          // Handle new_password2 error (mismatch)
+                          else if (data.errors.new_password2) {
+                              errorMsg = data.errors.new_password2[0].message;
+                          }
+                          // Handle other errors generically
+                          else {
+                              errorMsg = Object.values(data.errors)
+                                  .flatMap(errors => errors.map(e => e.message))
+                                  .join('<br>');
+                          }
+                      }
+                      showResult('Error', errorMsg, 'text-red-500');
+                  }
+              } catch (error) {
+                  console.error('Error:', error);
+                  showResult('Error', 'Error de conexión con el servidor', 'text-red-500');
+              }
+          });
+
+            // Resetear validaciones de contraseña
+            function resetPasswordValidations() {
+                isPasswordValid = false;
+                passwordsMatch = false;
+                document.querySelectorAll('#password-strength .text-green-500').forEach(el => {
+                    el.className = 'text-red-500 mr-2';
+                    el.innerHTML = '<i class="fas fa-times-circle"></i>';
+                });
+                document.getElementById('password-match').classList.add('hidden');
+                requestChangeBtn.disabled = true;
+            }
+
+            // Cancelar cambio
+            cancelChangeBtn.addEventListener('click', function() {
+                confirmModal.classList.add('hidden');
+            });
+
+            // Cerrar modal de resultado
+            closeResultModal.addEventListener('click', function() {
+                resultModal.classList.add('hidden');
+            });
+
+            // Función para mostrar resultados
+            function showResult(title, message, colorClass) {
+                resultTitle.textContent = title;
+                resultTitle.className = `text-xl font-bold mb-4 ${colorClass}`;
+                resultMessage.innerHTML = message;
+                resultModal.classList.remove('hidden');
+            }
+            
+            // Cerrar formulario al hacer clic fuera
+            passwordForm.addEventListener('click', function(e) {
+                if (e.target === passwordForm) {
+                    passwordForm.classList.add('hidden');
+                    showPasswordFormBtn.classList.remove('hidden');
+                    resetPasswordValidations();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

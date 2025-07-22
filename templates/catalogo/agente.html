@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    #chat-container { max-width: 600px; margin: 0 auto; border: 1px solid #ccc; border-radius: 10px; overflow: hidden; }
+    #chat-header { background: #007bff; color: white; padding: 10px; text-align: center; font-weight: bold; }
+    #chat-window { height: 400px; overflow-y: auto; padding: 10px; background: #f8f9fa; }
+    .message { padding: 8px 12px; margin: 5px 0; border-radius: 15px; max-width: 80%; word-wrap: break-word; }
+    .user-message { background: #007bff; color: white; align-self: flex-end; margin-left: auto; }
+    .agent-message { background: #e9ecef; color: black; align-self: flex-start; margin-right: auto; }
+    #chat-form { display: flex; border-top: 1px solid #ccc; padding: 10px; background: white; }
+    #chat-form input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+    #chat-form button { padding: 8px 15px; margin-left: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    #loading { text-align: center; padding: 10px; color: #666; }
+    #loading.loading-dots::after { content: '...'; animation: dots 1.5s steps(5, end) infinite; }
+    @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #666; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #666, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #666, .5em 0 0 #666; } }
+    #new-chat-btn { margin: 10px; padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    /* Add dark mode */
+    #chat-container.dark { background: #1f2937; border-color: #374151; }
+    #chat-header.dark { background: #1d4ed8; }
+    #chat-window.dark { background: #111827; }
+    .agent-message.dark { background: #374151; color: #f3f4f6; }
+    .user-message.dark { background: #1d4ed8; color: #f3f4f6; }
+    #chat-form.dark { background: #1f2937; border-top-color: #374151; }
+    #chat-form input.dark { background: #111827; color: #f3f4f6; border-color: #374151; }
+    #chat-form button.dark { background: #1d4ed8; }
+    #loading.dark { color: #9ca3af; }
+    #new-chat-btn.dark { background: #ef4444; }
+</style>
+<div id="chat-container">
+    <div id="chat-header">TU ASISTENTE CHIDO</div>
+    <div id="chat-window">
+        {% for msg in historial %}
+            <div class="message {% if msg.type == 'user' %}user-message{% else %}agent-message{% endif %}">
+                <strong>{% if msg.type == 'user' %}Tú:{% else %}Asistente:{% endif %}</strong> {{ msg.content }}
+            </div>
+        {% endfor %}
+        <div id="loading">Asistente está pensando...</div>
+    </div>
+    <form id="chat-form">
+        {% csrf_token %}
+        <input type="text" name="mensaje" placeholder="¿Qué buscas?" required>
+        <button type="submit">Enviar</button>
+    </form>
+</div>
+<button id="new-chat-btn">Nuevo Chat</button>
+
+<!-- Modal for confirming new chat -->
+<div id="confirmModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-80">
+      <p class="text-gray-800 dark:text-gray-100 mb-4">¿Iniciar un nuevo chat? Esto borrará el historial actual.</p>
+      <div class="flex justify-end space-x-3">
+          <button id="cancelModal" class="px-4 py-2 bg-gray-400 text-white rounded">Cancelar</button>
+          <button id="confirmModalBtn" class="px-4 py-2 bg-red-600 text-white rounded">Confirmar</button>
+      </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Detect dark mode (assuming Tailwind sets it on html or body)
+        if ($('html').hasClass('dark') || $('body').hasClass('dark')) {
+            $('#chat-container, #chat-header, #chat-window, .message, #chat-form, #chat-form input, #chat-form button, #loading, #new-chat-btn').addClass('dark');
+        }
+        $('#chat-form').on('submit', function(e) {
+            e.preventDefault();
+            const userMsg = $('input[name="mensaje"]').val();
+            if (!userMsg.trim()) return;
+            const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+            $('#chat-window').append('<div class="message user-message"><strong>Tú:</strong> ' + userMsg + '</div>');
+            $('input[name="mensaje"]').val('');
+            const temp = $('<div id="tempLoading" class="message agent-message"><em>⏳ Pensando...</em></div>');
+            $('#chat-window').append(temp);
+            $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+            $.ajax({
+                type: 'POST',
+                url: '{% url "agente_chat" %}',
+                data: { mensaje: userMsg, csrfmiddlewaretoken: csrftoken },
+                dataType: 'json',
+                success: function(data) {
+                    $('#tempLoading').remove();
+                    var formattedResponse = data.respuesta.replace(/\n/g, '<br>');
+                    $('#chat-window').append('<div class="message agent-message"><strong>Asistente:</strong> ' + formattedResponse + '</div>');
+                    $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+                },
+                error: function(xhr, status, error) {
+                    $('#tempLoading').remove();
+                    console.error('Error:', error);
+                    alert('Ocurrió un error al enviar el mensaje. Revisa la consola.');
+                }
+            });
+        });
+
+        // New Chat button opens modal
+        $('#new-chat-btn').on('click', function() {
+            $('#confirmModal').removeClass('hidden');
+        });
+        $('#cancelModal').on('click', function() {
+            $('#confirmModal').addClass('hidden');
+        });
+        $('#confirmModalBtn').on('click', function() {
+            const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+            $.ajax({
+                type: 'POST',
+                url: '{% url "agente_chat" %}',
+                data: { clear_chat: true, csrfmiddlewaretoken: csrftoken },
+                dataType: 'json',
+                success: function(data) {
+                    $('#confirmModal').addClass('hidden');
+                    // Reset chat window with greeting
+                    $('#chat-window').html('<div class="message agent-message"><strong>Asistente:</strong> ' + data.greeting + '</div>');
+                    // Scroll to bottom
+                    $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+                }
+            });
+        });
+
+        // Scroll inicial al final
+        $('#chat-window').scrollTop($('#chat-window')[0].scrollHeight);
+    });
+</script>
+{% endblock %} 

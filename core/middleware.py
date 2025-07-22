@@ -21,7 +21,8 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 
 import logging
-logging.warning("SETUP_MODE en runtime: %s", os.getenv('SETUP_MODE'))
+# Usar DEBUG para no mostrar en consola (nivel >=WARNING) pero sí registrar en archivo
+logging.debug("SETUP_MODE en runtime: %s", os.getenv('SETUP_MODE'))
 
 
 

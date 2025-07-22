@@ -6,9 +6,13 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
+import threading
+from django.core.cache import cache
 
-from products.models import Brand, Category, Product, BranchStock, Price 
+from products.models import Brand, Category, Product, BranchStock, Price, Branch
 from django.db.models import Q, Sum, OuterRef, Subquery, DecimalField
+from dashboard.buscar_sincronizar import sincronizar_inventario_sucursal
 
 @login_required
 @staff_member_required
@@ -81,3 +85,55 @@ def gestion_productos(request):
         "busqueda"         : busqueda or "",
     }
     return render(request, "admin_gestion.html", context)
+
+@login_required
+@staff_member_required
+def sincronizar_inventarios(request):
+    # Recreate queryset from filters
+    categoria_id = request.GET.get("categoria")
+    marca_id = request.GET.get("marca")
+    busqueda = request.GET.get("q")
+
+    productos_qs = Product.objects.all()  # Base queryset, apply filters as in gestion_productos
+    if categoria_id:
+        productos_qs = productos_qs.filter(categories__id=categoria_id)
+    if marca_id:
+        productos_qs = productos_qs.filter(brand__id=marca_id)
+    if busqueda:
+        productos_qs = productos_qs.filter(
+            Q(title__icontains=busqueda) | Q(model__icontains=busqueda) | Q(brand__name__icontains=busqueda)
+        )
+
+    total_productos = productos_qs.count()
+    sucursales = Branch.objects.all()
+
+    if request.method == "POST":
+        branch_id = request.POST.get("branch")
+        if not branch_id:
+            messages.error(request, "Seleccione una sucursal.")
+            return redirect(request.path)
+
+        product_ids = list(productos_qs.values_list('syscom_id', flat=True))
+        branch_slug = Branch.objects.get(id=branch_id).slug
+
+        cache_key = f'sync_progress_{request.user.id}'  # User-specific key
+        cache.set(cache_key, {'total': len(product_ids), 'processed': 0, 'status': 'running'}, timeout=3600)
+
+        def run_sync():
+            sincronizar_inventario_sucursal(product_ids, branch_slug, cache_key=cache_key)
+
+        threading.Thread(target=run_sync).start()
+
+        # Return immediately to allow polling
+        return JsonResponse({'status': 'started'})
+
+    context = {
+        'total_productos': total_productos,
+        'sucursales': sucursales,
+    }
+    return render(request, 'admin_sinc_inventarios.html', context)
+
+def get_sync_progress(request):
+    cache_key = f'sync_progress_{request.user.id}'
+    progress = cache.get(cache_key, {'processed': 0, 'total': 0, 'status': 'idle'})
+    return JsonResponse(progress)

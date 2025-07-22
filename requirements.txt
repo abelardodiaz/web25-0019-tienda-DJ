@@ -13,4 +13,5 @@ django-browser-reload
 dotenv
 bleach
 django-widget-tweaks
-
+django_ckeditor_5
+pytz

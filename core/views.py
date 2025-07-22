@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 import os
 
-print(os.getenv('DB_NAME')) 
+
 
 @method_decorator(csrf_protect, name='dispatch')
 class CustomPasswordChangeView(PasswordChangeView):

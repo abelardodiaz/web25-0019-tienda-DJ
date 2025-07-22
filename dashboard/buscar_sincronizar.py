@@ -24,6 +24,8 @@ from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.cache import cache
+from django.db import IntegrityError
 
 from products.models import (
     Branch,
@@ -227,6 +229,74 @@ def obtener_productos_syscom(query: str = "", ids: str = "", intento: int = 1) -
         return []
 
 
+# --- BLOQUE FUNCIONES AUXILIARES PARA SYNC ----------------------------------
+
+# --- BLOQUE PRECIOS (CORREGIDO) --------------------------------------------
+
+
+def sync_product_price(producto, price_data):
+    """
+    Sincroniza (crea o actualiza) el precio principal del producto
+    sin romper la clave primaria.
+    """
+    try:
+        # 1️⃣  Un solo statement atómico
+        Price.objects.update_or_create(
+            product=producto,        # clave única / One-To-One
+            defaults=price_data,     # campos a actualizar
+        )
+        return True
+
+    except IntegrityError as e:
+        logger.warning("IntegrityError en precios: %s", e)
+        # 2️⃣  Segundo intento por si existe una carrera de escritura
+        updated, _ = Price.objects.update_or_create(
+            product=producto,
+            defaults=price_data,
+        )
+        return updated is not None
+
+
+def sync_product_stock(producto, sucursales_data):
+    """Maneja la sincronización de inventarios por sucursal."""
+    success_count = 0
+    
+    for name, qty in sucursales_data.items():
+        try:
+            slug = slugify(name)[:50]
+
+            # Obtener o crear sucursal
+            try:
+                branch, _ = Branch.objects.get_or_create(
+                    slug=slug,
+                    defaults={"name": name}
+                )
+            except IntegrityError:
+                branch = Branch.objects.get(slug=slug)
+
+            # Sincronizar inventario
+            try:
+                BranchStock.objects.update_or_create(
+                    product=producto,
+                    branch=branch,
+                    defaults={"quantity": int(qty or 0)},
+                )
+                success_count += 1
+                
+            except IntegrityError:
+                # Si hay conflicto, hacer update directo
+                BranchStock.objects.filter(
+                    product=producto, 
+                    branch=branch
+                ).update(quantity=int(qty or 0))
+                success_count += 1
+                
+        except Exception as e:
+            logger.error(f"❌ Error sincronizando inventario {name} para producto {producto.syscom_id}: {e}")
+    
+    return success_count
+
+
 # --- BLOQUE VISTAS DJANGO ----------------------------------------------------
 
 
@@ -250,23 +320,31 @@ def sincronizar_productos(request):
     if request.method == "POST":
         selected_ids = request.POST.getlist("productos")
         success_count = 0
+        error_count = 0
 
         for pid in selected_ids:
             try:
+                logger.info(f"⏳ Iniciando sincronización para producto ID: {pid}")
                 datos = buscar_test(pid)  # Incluye inventarios=1
                 if not datos:
+                    logger.warning(f"⚠️ No se obtuvieron datos para ID: {pid}")
+                    error_count += 1
                     continue
 
                 pdata = datos["inventarios"]
+                logger.debug(f"📦 Datos obtenidos para ID {pid}")
 
                 with transaction.atomic():
                     # 1. Marca
-                    marca, _ = Brand.objects.get_or_create(
-                        name=pdata.get("marca", "Genérico")
-                    )
+                    marca_nombre = pdata.get("marca", "Genérico")
+                    logger.debug(f"🔖 Procesando marca: {marca_nombre}")
+                    marca, created = Brand.objects.get_or_create(name=marca_nombre)
+                    if created:
+                        logger.info(f"✅ Nueva marca creada: {marca_nombre}")
 
                     # 2. Producto principal
-                    producto, _ = Product.objects.update_or_create(
+                    logger.debug(f"📦 Creando/actualizando producto ID: {pid}")
+                    producto, created = Product.objects.update_or_create(
                         syscom_id=pid,
                         defaults={
                             "model": pdata.get("modelo", ""),
@@ -277,70 +355,130 @@ def sincronizar_productos(request):
                             "main_image": pdata.get("img_portada", ""),
                         },
                     )
+                    logger.info(f"{'🆕 Creado' if created else '🔄 Actualizado'} producto: {producto.title}")
 
                     # 3. Precios
-                    pr = pdata.get("precios", {})
-                    if isinstance(pr, list) and pr:
-                        pr = pr[0]
+                    pr = pdata.get("precios") or {}
+                    if isinstance(pr, list):
+                        pr = pr[0] if pr else {}
 
-                    Price.objects.update_or_create(
-                        product=producto,
-                        defaults={
-                            "normal": pr.get("precio_1", 0),
-                            "special": pr.get("precio_especial", 0),
-                            "discount": pr.get("precio_descuento", 0),
-                            "list_price": pr.get("precio_lista", 0),
-                        },
-                    )
+                    price_data = {
+                        "normal": float(pr.get("precio_1") or 0),
+                        "special": float(pr.get("precio_especial") or 0),
+                        "discount": float(pr.get("precio_descuento") or 0),
+                        "list_price": float(pr.get("precio_lista") or 0),
+                    }
+
+                    if not sync_product_price(producto, price_data):
+                        logger.warning(f"⚠️ No se pudieron sincronizar los precios para {pid}")
 
                     # 4. Existencia por sucursal
                     sucursales = (
                         pdata.get("existencia", {})
-                        .get("detalle", {})
-                        .get("nuevo", {})
+                            .get("detalle", {})
+                            .get("nuevo", {})
                     )
-                    for name, qty in sucursales.items():
-                        slug = slugify(name)[:50]
-                        branch, _ = Branch.objects.get_or_create(
-                            slug=slug, defaults={"name": name}
-                        )
-                        BranchStock.objects.update_or_create(
-                            product=producto,
-                            branch=branch,
-                            defaults={"quantity": int(qty) if qty else 0},
-                        )
+
+                    if sucursales:
+                        stock_success = sync_product_stock(producto, sucursales)
+                        logger.debug(f"📦 {stock_success} inventarios sincronizados para {pid}")
 
                     # 5. Categorías
                     for cat in pdata.get("categorias", []):
                         if isinstance(cat, dict) and cat.get("nombre"):
-                            categoria, _ = Category.objects.get_or_create(
-                                name=cat["nombre"], defaults={"level": cat.get("nivel", 1)}
-                            )
-                            producto.categories.add(categoria)
+                            try:
+                                categoria, _ = Category.objects.get_or_create(
+                                    name=cat["nombre"], 
+                                    defaults={"level": cat.get("nivel", 1)}
+                                )
+                                producto.categories.add(categoria)
+                            except Exception as e:
+                                logger.warning(f"⚠️ Error agregando categoría {cat['nombre']}: {e}")
 
                     # 6. Imágenes
                     for idx, img in enumerate(pdata.get("imagenes", [])):
                         if "imagen" in img:
-                            ProductImage.objects.get_or_create(
-                                product=producto,
-                                url=img["imagen"],
-                                defaults={"order": idx, "type": "galeria"},
-                            )
+                            try:
+                                ProductImage.objects.get_or_create(
+                                    product=producto,
+                                    url=img["imagen"],
+                                    defaults={"order": idx, "type": "galeria"},
+                                )
+                            except Exception as e:
+                                logger.warning(f"⚠️ Error agregando imagen {img['imagen']}: {e}")
 
                     # 7. Características
                     for feat in pdata.get("caracteristicas", []):
-                        Feature.objects.get_or_create(product=producto, text=feat)
+                        try:
+                            Feature.objects.get_or_create(product=producto, text=feat)
+                        except Exception as e:
+                            logger.warning(f"⚠️ Error agregando característica: {e}")
 
                     success_count += 1
-                    logger.info(f"Producto {pid} sincronizado")
+                    logger.info(f"✅ Producto {pid} sincronizado exitosamente")
 
             except Exception as e:
-                logger.error(f"Error sincronizando {pid}: {e}")
+                logger.error(f"❌ Error crítico sincronizando {pid}: {str(e)}")
+                error_count += 1
 
-        messages.success(request, f"{success_count} productos sincronizados")
+        # Mensaje final
+        if success_count > 0:
+            messages.success(request, f"✅ {success_count} productos sincronizados exitosamente")
+        if error_count > 0:
+            messages.warning(request, f"⚠️ {error_count} productos tuvieron errores")
+            
         return redirect("dashboard:sincronizar")
 
     return render(request, "admin_sinc.html", {"productos": productos})
+
+
+def sincronizar_inventario_sucursal(product_ids, branch_slug, cache_key=None):
+    """Sincroniza inventario para una sucursal específica."""
+    total = len(product_ids)
+    processed = 0
+    success_count = 0
+
+    for pid in product_ids:
+        try:
+            datos = buscar_test(pid)
+            if not datos:
+                continue
+
+            pdata = datos["inventarios"]
+            sucursales = pdata.get("existencia", {}).get("detalle", {}).get("nuevo", {})
+
+            if branch_slug in sucursales:
+                qty = int(sucursales[branch_slug])
+                producto = Product.objects.get(syscom_id=pid)
+                branch = Branch.objects.get(slug=branch_slug)
+                BranchStock.objects.update_or_create(
+                    product=producto,
+                    branch=branch,
+                    defaults={"quantity": qty}
+                )
+                success_count += 1
+
+        except Exception as e:
+            logger.error(f"Error sincronizando inventario de {pid} para {branch_slug}: {e}")
+
+        processed += 1
+        if cache_key:
+            cache.set(cache_key, {
+                'total': total, 
+                'processed': processed, 
+                'success_count': success_count,
+                'status': 'running'
+            }, timeout=3600)
+
+    if cache_key:
+        progress = cache.get(cache_key, {})
+        progress.update({
+            'status': 'completed',
+            'success_count': success_count
+        })
+        cache.set(cache_key, progress, timeout=3600)
+
+    return success_count
 
 
 # --- BLOQUE FUNCIONES DE PRUEBA / DEBUG --------------------------------------

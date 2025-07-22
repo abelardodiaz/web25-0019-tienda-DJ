@@ -1,0 +1,101 @@
+<!-- file: dashboard/templates/admin_editar_detalles.html -->
+
+ <!-- utiliza el filtro add_class de django-widget-tweaks; si 
+  no lo tienes instalado, simplemente quita |add_class:"..." del HTML). -->
+
+{% extends 'admin_base.html' %}
+
+{# ─── Carga de librerías ─────────────────────────────────────────── #}
+{% load static %}                   {# Para `{% static %}` si lo usas en tu base #}
+{% load widget_tweaks %}            {# Para filtros como `add_class`, `attr`, etc. #}
+
+{# ─── Título de la página ───────────────────────────────────────── #}
+{% block title %}Editar {{ producto.model }} | TUTIENDA.com{% endblock %}
+
+{# ─── Contenido principal ────────────────────────────────────────── #}
+{% block content %}
+<main class="container mx-auto px-4 py-8">
+
+  <h1 class="text-2xl font-bold mb-6">Editar producto – {{ producto.model }}</h1>
+
+  <form method="post" class="space-y-6 bg-dark-800 p-6 rounded-xl border border-dark-700">
+    {% csrf_token %}
+    {{ form.media }}
+    <style>
+        .django-ckeditor-widget {
+            display: block !important;  /* Cambia inline-block a block */
+            width: 100% !important;     /* Fuerza ancho completo */
+        }
+        .cke_contents iframe {
+            width: 100% !important;     /* Fuerza ancho del iframe interno */
+        }
+    </style>
+    {{ form.non_field_errors }}
+
+    <!-- Título -->
+    <div>
+      <label class="block text-gray-400 mb-1">Título</label>
+      {{ form.title|add_class:"w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2" }}
+      {{ form.title.errors }}
+    </div>
+
+    <!-- Modelo -->
+    <div>
+      <label class="block text-gray-400 mb-1">Modelo / SKU</label>
+      {{ form.model|add_class:"w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2" }}
+      {{ form.model.errors }}
+    </div>
+
+    <!-- Marca -->
+    <div>
+      <label class="block text-gray-400 mb-1">Marca</label>
+      {{ form.brand|add_class:"w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2" }}
+      {{ form.brand.errors }}
+    </div>
+
+    <!-- Descripción -->
+    <div>
+      <label class="block text-gray-400 mb-1">Descripción breve</label>
+      {{ form.description|add_class:"w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2" }}
+      {{ form.description.errors }}
+    </div>
+    <!-- Garantía -->
+    <div>
+      <label class="block text-gray-400 mb-1">Garantía</label>
+      {{ form.warranty|add_class:"w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2" }}
+      {{ form.warranty.errors }}
+    </div>
+
+    <!-- Características -->
+    <div>
+      <label class="block text-gray-400 mb-1">Características (una por línea)</label>
+      {{ form.features_text|add_class:"w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2" }}
+      {{ form.features_text.errors }}
+    </div>
+
+    <!-- Existencia SLP -->
+    <div>
+      <label class="block text-gray-400 mb-1">Existencia en SLP</label>
+      {{ form.existencia_slp|add_class:"w-32 bg-dark-700 border border-dark-600 rounded-lg px-4 py-2 text-right" }}
+      {{ form.existencia_slp.errors }}
+    </div>
+    <!-- Existencia total -->
+    <div>
+    <label class="block text-gray-400 mb-1">Existencia total (todas las sucursales)</label>
+    <input type="text"
+            value="{{ total_existencia }}"
+            readonly
+            class="w-32 bg-dark-700 border border-dark-600 rounded-lg px-4 py-2 text-right opacity-60 cursor-not-allowed" />
+    </div>
+    <!-- Botones -->
+    <div class="flex justify-between">
+      <a href="{% url 'dashboard:gestion_productos' %}"
+         class="bg-dark-700 hover:bg-dark-600 text-white py-2 px-6 rounded-lg">Cancelar</a>
+      <button type="submit"
+              class="bg-accent-500 hover:bg-accent-400 text-dark-900 font-medium py-2 px-6 rounded-lg">
+        Guardar cambios
+      </button>
+    </div>
+  </form>
+</main>
+{% endblock %} 

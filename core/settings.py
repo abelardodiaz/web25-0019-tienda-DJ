@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'catalogo',
     'core',
     'widget_tweaks',
+    'django_ckeditor_5',
 ]
 
 MIDDLEWARE = [
@@ -198,3 +199,11 @@ LOGIN_REDIRECT_URL = '/account/profile/'       # o el nombre de tu URL: reverse_
 LOGOUT_REDIRECT_URL = '/'      # opcional, para después del logout
 
 APPEND_SLASH = True
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': ['bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList', 'removeFormat', 'sourceEditing'],
+        'height': 600,
+        'width': '100%',
+    },
+}

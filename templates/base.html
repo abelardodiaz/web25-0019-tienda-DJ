@@ -108,7 +108,7 @@
                     <ul class="space-y-2 text-gray-400 text-sm">
                         {% for cat in footer_categorias %}
                         <li>
-                            <a href="{% url 'home' %}?categoria={{ cat.id }}"
+                            <a href="{% url 'home' %}?categoria={{ cat.slug }}"
                             class="hover:text-white transition">
                             {{ cat.name }}
                             </a>
@@ -125,7 +125,7 @@
                     <ul class="space-y-2 text-gray-400 text-sm">
                         {% for brand in footer_marcas %}
                         <li>
-                            <a href="{% url 'home' %}?marca={{ brand.id }}"
+                            <a href="{% url 'home' %}?marca={{ brand.slug }}"
                             class="hover:text-white transition">
                             {{ brand.name }}
                             </a>
@@ -144,6 +144,7 @@
                         <li><a href="#" class="hover:text-white transition">Contacto</a></li>
                         <li><a href="#" class="hover:text-white transition">Política de privacidad</a></li>
                         <li><a href="#" class="hover:text-white transition">Términos y condiciones</a></li>
+                        <li><a href="/dashboard/" class="hover:text-white transition">Empleados</a></li>
                     </ul>
                 </div>
             </div>

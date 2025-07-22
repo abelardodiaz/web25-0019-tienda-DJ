@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="bg-gray-900 text-gray-100 h-full">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configuración Inicial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="h-full flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <i class="fas fa-rocket text-6xl text-blue-500 mb-4"></i>
+            <h1 class="text-3xl font-bold">Configuración Inicial</h1>
+            <p class="text-gray-400 mt-2">Primera ejecución del sistema</p>
+        </div>
+
+        {% if db_status %}
+        <div class="{% if db_status.status == 'error' %}bg-red-900/50 border border-red-700{% elif db_status.status == 'warning' %}bg-yellow-900/50 border border-yellow-700{% else %}bg-green-900/50 border border-green-700{% endif %} rounded-lg p-4 mb-6">
+            <div class="font-bold {% if db_status.status == 'error' %}text-red-500{% elif db_status.status == 'warning' %}text-yellow-500{% else %}text-green-500{% endif %} flex items-center gap-2">
+                <i class="fas {{ db_status.icon }}"></i>
+                <span>
+                    {% if db_status.status == 'error' %}Error de Base de Datos
+                    {% elif db_status.status == 'warning' %}Advertencia
+                    {% else %}Éxito{% endif %}
+                </span>
+            </div>
+            <p class="mt-2 text-sm">{{ db_status.message }}</p>
+        </div>
+        {% endif %}
+
+        {% if db_status and db_status.status == 'warning' %}
+        <div class="bg-yellow-900/50 border border-yellow-700 rounded-lg p-4 mb-6">
+            <div class="font-bold text-yellow-500 flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Acción Requerida</span>
+            </div>
+            <p class="mt-2 text-sm">{{ db_status.message }}</p>
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <button type="submit" name="initialize_db" class="w-full bg-gradient-to-r from-yellow-600 to-orange-700 hover:from-yellow-700 hover:to-orange-800 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300">
+                    <i class="fas fa-database mr-2"></i>Inicializar Base de Datos
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+
+        {% if database_ready and not db_status.status == 'error' %}
+        <form method="post" class="bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-xl p-6 shadow-xl">
+            {% csrf_token %}
+            <input type="hidden" name="create_user" value="1">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Correo Electrónico</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-red-500 text-sm mt-1">
+                            {% for error in form.email.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Contraseña</label>
+                    <div class="relative">
+                        {{ form.password }}
+                        <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="id_password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <div class="text-red-500 text-sm mt-1">
+                            {% for error in form.password.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div id="password-strength" class="mt-2 text-sm">
+                        <div class="flex items-center mb-1">
+                            <span id="length-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                            <span>Mínimo 8 caracteres</span>
+                        </div>
+                        <div class="flex items-center mb-1">
+                            <span id="uppercase-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                            <span>Al menos 1 mayúscula</span>
+                        </div>
+                        <div class="flex items-center mb-1">
+                            <span id="number-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                            <span>Al menos 1 número</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span id="special-check" class="text-red-500 mr-2"><i class="fas fa-times-circle"></i></span>
+                            <span>Al menos 1 carácter especial (@$!%*?&)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">Confirmar Contraseña</label>
+                    <div class="relative">
+                        {{ form.password_confirm }}
+                        <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="id_password_confirm">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password_confirm.errors %}
+                        <div class="text-red-500 text-sm mt-1">
+                            {% for error in form.password_confirm.errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div id="password-match" class="mt-2 text-sm text-red-500 hidden">
+                        <i class="fas fa-exclamation-circle mr-1"></i> Las contraseñas no coinciden
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="mt-6 w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white py-3 px-4 rounded-lg font-medium transition-all duration-300">
+                <i class="fas fa-bolt mr-2"></i>Inicializar Sistema
+            </button>
+        </form>
+        {% elif database_ready and db_status.status == 'error' %}
+        <div class="bg-red-900/50 border border-red-700 rounded-lg p-4 mb-6">
+            <p class="text-sm">No se puede crear el usuario hasta que se resuelvan los errores de la base de datos.</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p>
+                <i class="fas {% if db_status %}{{ db_status.icon }} {{ db_status.color }}{% else %}fa-circle-notch fa-spin{% endif %} mr-2"></i>
+                {% if db_status %}{{ db_status.message }}{% else %}Verificando estado de la base de datos...{% endif %}
+            </p>
+        </div>
+        
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-6">
+            <div class="font-bold text-blue-500 flex items-center gap-2">
+                <i class="fas fa-globe"></i>
+                <span>Información del Servidor</span>
+            </div>
+            <p class="mt-2 text-sm">
+                IP Pública: <span class="font-mono">{{ public_ip }}</span>
+            </p>
+        </div>
+
+    </div>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+        });
+
+        // Validación en tiempo real
+        const passwordInput = document.getElementById('id_password');
+        const passwordConfirmInput = document.getElementById('id_password_confirm');
+        let isPasswordValid = false;
+        let passwordsMatch = false;
+
+        passwordInput.addEventListener('input', function() {
+            validatePassword(this.value);
+            checkPasswordMatch();
+        });
+
+        passwordConfirmInput.addEventListener('input', function() {
+            checkPasswordMatch();
+        });
+
+        function validatePassword(password) {
+            // Longitud mínima
+            const lengthValid = password.length >= 8;
+            document.getElementById('length-check').className = lengthValid ? 
+                'text-green-500 mr-2' : 'text-red-500 mr-2';
+            document.getElementById('length-check').innerHTML = lengthValid ? 
+                '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+            
+            // Mayúsculas
+            const uppercaseValid = /[A-Z]/.test(password);
+            document.getElementById('uppercase-check').className = uppercaseValid ? 
+                'text-green-500 mr-2' : 'text-red-500 mr-2';
+            document.getElementById('uppercase-check').innerHTML = uppercaseValid ? 
+                '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+            
+            // Números
+            const numberValid = /[0-9]/.test(password);
+            document.getElementById('number-check').className = numberValid ? 
+                'text-green-500 mr-2' : 'text-red-500 mr-2';
+            document.getElementById('number-check').innerHTML = numberValid ? 
+                '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+            
+            // Caracteres especiales
+            const specialValid = /[@$!%*?&]/.test(password);
+            document.getElementById('special-check').className = specialValid ? 
+                'text-green-500 mr-2' : 'text-red-500 mr-2';
+            document.getElementById('special-check').innerHTML = specialValid ? 
+                '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-times-circle"></i>';
+            
+            isPasswordValid = lengthValid && uppercaseValid && numberValid && specialValid;
+        }
+
+        function checkPasswordMatch() {
+            const password1 = passwordInput.value;
+            const password2 = passwordConfirmInput.value;
+            
+            if (password1 && password2) {
+                passwordsMatch = password1 === password2;
+                document.getElementById('password-match').classList.toggle('hidden', passwordsMatch);
+            } else {
+                passwordsMatch = false;
+                document.getElementById('password-match').classList.add('hidden');
+            }
+        }
+    });
+</script>
+</html> 

@@ -16,6 +16,7 @@ import logging
 
 
 from products.models import Branch, BranchStock, Feature, Product
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 SLP_SLUG = "san_luis_potosi"  # usado para localizar la sucursal SLP
 
@@ -42,7 +43,7 @@ class ProductoForm(forms.ModelForm):
         model = Product
         fields = ["title", "model", "brand", "description", "warranty"]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
+            "description": CKEditor5Widget(),
             "warranty": forms.TextInput(attrs={"placeholder": "12 meses"}),
         }
 

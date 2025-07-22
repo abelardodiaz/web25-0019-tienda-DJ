@@ -1,0 +1,41 @@
+<!-- confirm_reset.html -->
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="bg-dark-800 rounded-xl p-8 border {% if reset_type == 'full' %}border-red-500/30{% else %}border-yellow-500/30{% endif %}">
+        <div class="flex items-start mb-6">
+            <div class="w-12 h-12 rounded-full {% if reset_type == 'full' %}bg-red-500/20{% else %}bg-yellow-500/20{% endif %} flex items-center justify-center mr-4">
+                <i class="fas {% if reset_type == 'full' %}fa-exclamation-triangle text-red-500{% else %}fa-sync text-yellow-500{% endif %} text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold mb-2">Confirmar Reset {{ reset_type|title }}</h2>
+                <p class="text-gray-400">{{ message }}</p>
+            </div>
+        </div>
+        
+        <div class="bg-{% if reset_type == 'full' %}red{% else %}yellow{% endif %}-500/10 border border-{% if reset_type == 'full' %}red{% else %}yellow{% endif %}-500/30 rounded-lg p-6 mt-6">
+            <div class="flex items-start mb-4">
+                <i class="fas fa-exclamation-circle text-{% if reset_type == 'full' %}red{% else %}yellow{% endif %}-500 mt-1 mr-3"></i>
+                <div>
+                    <h4 class="font-bold text-{% if reset_type == 'full' %}red{% else %}yellow{% endif %}-400">¡Advertencia crítica!</h4>
+                    <p class="text-sm mt-1">Esta acción no se puede deshacer. Asegúrate de haber hecho una copia de seguridad si necesitas conservar los datos.</p>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="mt-6 flex justify-end space-x-4">
+                    <a href="{% url 'dashboard:admin_panel' %}" class="bg-gray-600 hover:bg-gray-500 text-white py-2 px-6 rounded-lg font-medium transition">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="bg-{% if reset_type == 'full' %}red{% else %}yellow{% endif %}-500 hover:bg-{% if reset_type == 'full' %}red{% else %}yellow{% endif %}-400 text-white py-2 px-6 rounded-lg font-medium transition">
+                        <i class="fas fa-bomb mr-2"></i> Confirmar Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
