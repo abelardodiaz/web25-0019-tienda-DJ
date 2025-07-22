@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block title %}Canasta | TUTIENDA.com{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Tu Canasta</h1>
+    {% if cart_items %}
+    <div class="space-y-4 mb-8">
+        {% for item in cart_items %}
+        <div class="flex items-center bg-dark-800 p-4 rounded-lg" data-prod-id="{{ item.prod_id }}" data-unit-price="{{ item.price|floatformat:2 }}">
+            <a href="{% url 'detalle_producto' item.slug %}">
+                <img src="{{ item.image }}" class="w-16 h-16 object-cover rounded mr-4" alt="{{ item.title }}">
+            </a>
+            <div class="flex-1">
+                <a href="{% url 'detalle_producto' item.slug %}" class="font-medium">{{ item.title }}</a>
+                <p class="text-gray-400">Precio unitario (sin IVA): {{ item.price|thousands_sep }}</p>
+                <div class="flex items-center mt-2">
+                    <label class="mr-2">Cantidad:</label>
+                    <input type="number" class="qty-input w-20 bg-dark-700 text-white py-1 px-2 rounded" value="{{ item.qty }}" min="0">
+                </div>
+                <p class="font-bold mt-2">Subtotal: <span class="item-total">{{ item.total|thousands_sep }}</span></p>
+            </div>
+            <button class="remove-item text-red-500 hover:text-red-700 ml-4">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="bg-dark-800 p-4 rounded-lg mb-4">
+        <div class="flex justify-between mb-2">
+            <span>Subtotal (sin IVA)</span>
+            <span id="total-sub">{{ total_sub|thousands_sep }}</span>
+        </div>
+        <div class="flex justify-between mb-2">
+            <span>IVA</span>
+            <span id="iva">{{ iva|thousands_sep }}</span>
+        </div>
+        <div class="flex justify-between font-bold text-lg">
+            <span>Total</span>
+            <div>
+                <span id="grand-total">{{ grand_total|thousands_sep }}</span>
+                <small class="block text-gray-400 text-xs">MXN PESOS MEXICANOS</small>
+            </div>
+        </div>
+    </div>
+    <div class="flex justify-between">
+        <button id="clear-cart" class="bg-red-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-red-600">Vaciar canasta</button>
+        <button id="save-cart" class="bg-accent-500 text-dark-900 py-3 px-6 rounded-lg font-medium hover:bg-accent-400">Guardar canasta</button>
+        <button class="bg-green-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-600">Finalizar compra</button>
+    </div>
+    {% else %}
+    <p>Tu canasta está vacía.</p>
+    {% endif %}
+</div>
+<div id="clear-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center">
+    <div class="bg-dark-800 p-6 rounded-lg max-w-sm w-full">
+        <h3 class="text-xl font-bold mb-4">¿Vaciar canasta?</h3>
+        <p class="text-gray-300 mb-6">¿Estás seguro de vaciar toda la canasta? Esta acción no se puede deshacer.</p>
+        <div class="flex justify-end space-x-4">
+            <button id="clear-no" class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Cancelar</button>
+            <button id="clear-yes" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600">Sí, vaciar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const ivaRate = parseFloat('{{ settings.IVA|default:"0.16" }}') || 0.16;
+console.log('ivaRate loaded:', ivaRate);
+const updateUrl = "{% url 'update_cart' %}";
+
+document.addEventListener('DOMContentLoaded', () => {
+    const csrfToken = getCookie('csrftoken');
+    
+    function updateTotals() {
+        let totalSub = 0;
+        document.querySelectorAll('.item-total').forEach(span => {
+            const text = span.textContent.trim();
+            console.log('Parsing item total:', text);
+            const num = parseFloat(text.replace(/[^0-9.]/g, ''));
+            totalSub += isNaN(num) ? 0 : num;
+        });
+        totalSub = isNaN(totalSub) ? 0 : totalSub;
+        console.log('Total sub before IVA:', totalSub);
+        const iva = (totalSub * ivaRate).toFixed(2);
+        const grandTotal = (parseFloat(totalSub) + parseFloat(iva)).toFixed(2);
+        document.getElementById('total-sub').textContent = `${parseFloat(totalSub).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('iva').textContent = `${parseFloat(iva).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('grand-total').textContent = `${parseFloat(grandTotal).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+    
+    document.querySelectorAll('.qty-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qty = parseInt(e.target.value || 0);
+            const row = e.target.closest('[data-prod-id]');
+            const price = parseFloat(row.dataset.unitPrice);
+            console.log('Qty:', qty, 'Price:', price);
+            const newTotalNum = isNaN(qty) || isNaN(price) ? 0 : (qty * price).toFixed(2);
+            row.querySelector('.item-total').textContent = `${parseFloat(newTotalNum).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            updateTotals();
+        });
+        input.addEventListener('change', (e) => {
+            const qty = parseInt(e.target.value || 0);
+            const row = e.target.closest('[data-prod-id]');
+            fetch(updateUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+                body: new URLSearchParams({ action: 'update_qty', prod_id: row.dataset.prodId, qty: qty })
+            }).then(res => res.json()).then(data => {
+                if (data.success) updateTotals();
+            });
+        });
+    });
+    
+    document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const row = e.target.closest('[data-prod-id]');
+            fetch(updateUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+                body: new URLSearchParams({ action: 'remove', prod_id: row.dataset.prodId })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    row.remove();
+                    updateTotals();
+                }
+            });
+        });
+    });
+
+    // Toast helper
+    const toast = document.getElementById('toast');
+    function showToast(msg, colorClass='bg-green-500') {
+        toast.textContent = msg;
+        toast.className = `toast ${colorClass}`;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+    
+    // Clear cart button
+    const clearBtn = document.getElementById('clear-cart');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            document.getElementById('clear-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('clear-yes').addEventListener('click', () => {
+            document.getElementById('clear-modal').classList.add('hidden');
+            fetch(updateUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrfToken },
+                body: new URLSearchParams({ action: 'clear' })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    showToast('Canasta vaciada');
+                    setTimeout(()=>location.reload(),1000);
+                }
+            });
+        });
+
+        document.getElementById('clear-no').addEventListener('click', () => {
+            document.getElementById('clear-modal').classList.add('hidden');
+        });
+    }
+
+    const saveBtn = document.getElementById('save-cart');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            document.querySelectorAll('.qty-input').forEach(inp => inp.dispatchEvent(new Event('change')));
+            showToast('Canasta guardada');
+        });
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

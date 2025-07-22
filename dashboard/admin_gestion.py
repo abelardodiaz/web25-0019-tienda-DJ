@@ -13,6 +13,7 @@ from django.core.cache import cache
 from products.models import Brand, Category, Product, BranchStock, Price, Branch
 from django.db.models import Q, Sum, OuterRef, Subquery, DecimalField
 from dashboard.buscar_sincronizar import sincronizar_inventario_sucursal
+from core.utils import calculate_mxn_price
 
 @login_required
 @staff_member_required
@@ -84,6 +85,11 @@ def gestion_productos(request):
         "current_marca"    : int(marca_id)     if marca_id else "",
         "busqueda"         : busqueda or "",
     }
+    for p in page_obj:
+        if hasattr(p, 'prices') and p.prices.special:
+            p.mxn_price = calculate_mxn_price(p.prices, request.user)
+        else:
+            p.mxn_price = None
     return render(request, "admin_gestion.html", context)
 
 @login_required

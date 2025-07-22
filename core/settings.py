@@ -68,6 +68,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 # ➊  nuestro nuevo processor
                 "catalogo.context_processors.categorias_marcas",
+                "catalogo.context_processors.cart_summary",
             ],
         },
     },
@@ -199,6 +200,8 @@ LOGIN_REDIRECT_URL = '/account/profile/'       # o el nombre de tu URL: reverse_
 LOGOUT_REDIRECT_URL = '/'      # opcional, para después del logout
 
 APPEND_SLASH = True
+
+IVA = env.float('IVA', 16.0) / 100
 
 CKEDITOR_5_CONFIGS = {
     'default': {

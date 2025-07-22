@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito | TUTIENDA.com{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Tu Carrito</h1>
+    {% if cart_items %}
+    <div class="space-y-4 mb-8">
+        {% for item in cart_items %}
+        <div class="flex items-center bg-dark-800 p-4 rounded-lg">
+            <img src="{{ item.image }}" class="w-16 h-16 object-cover rounded mr-4" alt="{{ item.title }}">
+            <div class="flex-1">
+                <h3 class="font-medium">{{ item.title }}</h3>
+                <p class="text-gray-400">Precio unitario (sin IVA): ${{ item.price|floatformat:2 }} MXN</p>
+                <p class="text-gray-400">Cantidad: {{ item.qty }}</p>
+                <p class="font-bold">Subtotal: ${{ item.total|floatformat:2 }} MXN</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="bg-dark-800 p-4 rounded-lg">
+        <div class="flex justify-between mb-2">
+            <span>Subtotal (sin IVA)</span>
+            <span>${{ total_sub|floatformat:2 }} MXN</span>
+        </div>
+        <div class="flex justify-between mb-2">
+            <span>IVA</span>
+            <span>${{ iva|floatformat:2 }} MXN</span>
+        </div>
+        <div class="flex justify-between font-bold text-lg">
+            <span>Total</span>
+            <span>${{ grand_total|floatformat:2 }} MXN</span>
+        </div>
+    </div>
+    <button class="mt-4 bg-accent-500 text-dark-900 py-3 px-6 rounded-lg font-medium">Finalizar compra</button>
+    {% else %}
+    <p>Tu carrito está vacío.</p>
+    {% endif %}
+</div>
+{% endblock %} 

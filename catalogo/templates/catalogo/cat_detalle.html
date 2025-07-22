@@ -2,6 +2,7 @@
 <!-- file:templates/catalogo/cat_detalle.html -->
 {% extends "base.html" %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}{{ producto.title }} | TUTIENDA.com{% endblock %}
 
@@ -76,7 +77,7 @@
             <!-- Precio -->
             <div class="mb-6">
                 <p class="text-accent-500 font-bold text-3xl">
-                    ${{ producto.prices.discount|floatformat:2 }} USD
+                    {{ mxn_price|thousands_sep }}
                 </p>
             </div>
             
@@ -113,10 +114,17 @@
             </div>
             
             <!-- Botón de añadir al carrito -->
-            <button class="w-full bg-accent-500 text-dark-900 py-3 px-4 rounded-xl font-medium hover:bg-accent-400 transition">
+            {% if producto.slp_stock_quantity > 0 %}
+            <button class="add-to-cart w-full bg-accent-500 text-dark-900 py-3 px-4 rounded-xl font-medium hover:bg-accent-400 transition" data-slug="{{ producto.slug }}">
                 <i class="fas fa-shopping-cart mr-2"></i>
-                Añadir al carrito
+                Añadir a canasta
             </button>
+            {% else %}
+            <button class="w-full bg-gray-500 text-dark-900 py-3 px-4 rounded-xl font-medium cursor-not-allowed opacity-50" disabled>
+                <i class="fas fa-ban mr-2"></i>
+                Producto agotado
+            </button>
+            {% endif %}
         </div>
     </div>
 </div>

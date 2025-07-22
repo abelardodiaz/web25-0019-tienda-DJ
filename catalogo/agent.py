@@ -23,6 +23,7 @@ from django.core.cache import cache
 from django.http import HttpRequest
 import hashlib
 from langchain.tools import Tool
+from core.utils import calculate_mxn_price
 
 load_dotenv()
 
@@ -89,7 +90,7 @@ def run_agent(request: HttpRequest, user_input: str) -> str:
                 price_obj = None
                 
             if price_obj:
-                price_value = price_obj.discount or price_obj.special or price_obj.normal
+                price_value = calculate_mxn_price(price_obj, None)
             else:
                 price_value = "N/A"
                 
@@ -150,8 +151,7 @@ def run_agent(request: HttpRequest, user_input: str) -> str:
             price_obj = product.prices
             raw_price = price_obj.discount or price_obj.special or price_obj.normal
             if raw_price is not None:
-                # Convert Decimal to float for JSON serialization
-                price_value = float(raw_price)
+                price_value = float(calculate_mxn_price(price_obj, None))
             else:
                 price_value = "N/A"
         except Price.DoesNotExist:

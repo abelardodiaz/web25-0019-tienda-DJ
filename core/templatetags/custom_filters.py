@@ -42,3 +42,10 @@ def get_item(queryset, id):
         return next(item for item in queryset if item.id == int(id))
     except (StopIteration, ValueError):
         return None
+
+@register.filter
+def thousands_sep(value):
+    try:
+        return f"{float(value):,.2f}"
+    except (ValueError, TypeError):
+        return value

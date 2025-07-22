@@ -378,6 +378,8 @@ class Price(models.Model):
         default=20.0,
         verbose_name=_("Margen (%)")
     )
+    margen_prod = models.FloatField(default=0.20, verbose_name="Margen Producto (%)")
+    descuento_prod = models.FloatField(default=0.0, verbose_name="Descuento Producto (%)")
     price_edited = models.BooleanField(
         default=False,
         verbose_name=_("Precio Editado Manualmente")

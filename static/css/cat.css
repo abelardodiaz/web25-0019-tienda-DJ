@@ -170,4 +170,92 @@ body {
     margin: 1.5rem 0;
 }
 
+/* Asegurar que los botones no afecten el layout */
+.add-to-cart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Plus icon button */
+.add-to-cart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+/* Product card layout */
+.product-card {
+    display: block; /* Revert to original block (no flex column forzada) */
+    height: auto; /* No forzar height 100% */
+    transition: all 0.3s ease;
+}
+
+.product-card a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.product-card .p-4 {
+    padding: 1rem; /* Padding original para margen superior/inferior */
+}
+
+/* Quitamos absolute del wrapper (ya no lo usamos) */
+.add-btn-wrapper {
+    position: static;
+    padding: 0;
+}
+
+/* Plus icon button */
+.add-to-cart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+/* Corregir alineación de tarjetas de producto */
+.product-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.product-card .flex-1 {
+    flex: 1;
+}
+
+/* Disabled button styles */
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Toast notification styles */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4CAF50; /* green success */
+    color: white;
+    padding: 15px;
+    border-radius: 4px;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: opacity 0.3s;
+}
+
+.toast.bg-green-500 {
+    background-color: #10B981; /* green success */
+}
+
+.toast.bg-red-500 {
+    background-color: #EF4444; /* red error */
+}
+
 

@@ -81,10 +81,135 @@ overlay.addEventListener('click', () => {
 // ----------------------------------
 const addButtons = document.querySelectorAll('.product-card button:last-child');
 addButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        toast.classList.remove('hidden');
-        setTimeout(() => {
-            toast.classList.add('hidden');
-        }, 2500);
+    button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent opening product detail
+        
+        const slug = button.dataset.slug;
+        try {
+            const csrftoken = getCookie('csrftoken');
+            const response = await fetch(`/add-to-cart/${slug}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update cart count
+                const cartCountSpan = document.querySelector('#cart-toggle span');
+                if (cartCountSpan) {
+                    cartCountSpan.textContent = data.cart_count;
+                    cartCountSpan.className = 'absolute -top-2 -right-2 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center';
+                    cartCountSpan.classList.add(data.cart_count > 0 ? 'bg-red-500' : 'bg-gray-500');
+                }
+                
+                // Show notification
+                toast.classList.remove('hidden');
+                toast.textContent = '¡Producto añadido al carrito!';
+                setTimeout(() => toast.classList.add('hidden'), 2500);
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            toast.classList.remove('hidden');
+            toast.textContent = 'Error al añadir al carrito';
+            toast.classList.add('bg-red-500');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('bg-red-500');
+            }, 2500);
+        }
     });
+});
+
+// Función para obtener el token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Añadir al carrito con AJAX
+document.querySelectorAll('.add-to-cart:not(:disabled)').forEach(button => {
+    button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Click detected on add-to-cart button. Propagation stopped.');
+        const originalContent = button.innerHTML; // Save original (e.g. + icon)
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Spinner
+        const slug = button.dataset.slug;
+        try {
+            console.log('Attempting fetch to /add-to-cart/' + slug + '/');
+            const csrftoken = getCookie('csrftoken');
+            console.log('CSRF token:', csrftoken);
+            const response = await fetch(`/add-to-cart/${slug}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                }
+            });
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Response data:', data);
+            if (data.success) {
+                // Update cart count
+                const cartCountSpan = document.querySelector('#cart-toggle span');
+                if (cartCountSpan) {
+                    cartCountSpan.textContent = data.cart_count;
+                    cartCountSpan.className = 'absolute -top-2 -right-2 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center';
+                    cartCountSpan.classList.add(data.cart_count > 0 ? 'bg-red-500' : 'bg-gray-500');
+                }
+                // Success toast
+                toast.innerHTML = '<i class="fas fa-check mr-2"></i> ¡Producto añadido!';
+                toast.classList.add('bg-green-500');
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 2500);
+            } else {
+                throw new Error(data.error || 'Unknown error');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            alert('Error al añadir: ' + error.message + '. Revisa consola.');
+            toast.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i> Error: ' + error.message;
+            toast.classList.add('bg-red-500');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('bg-red-500');
+            }, 2500);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalContent; // Restore original content
+        }
+    });
+});
+
+// Buscar y eliminar cualquier intervalo de rotación automática
+document.querySelectorAll('.carousel').forEach(carousel => {
+    const autoRotate = carousel.dataset.autoRotate;
+    if (autoRotate === 'true') {
+        clearInterval(parseInt(carousel.dataset.intervalId));
+        carousel.removeAttribute('data-auto-rotate');
+        carousel.removeAttribute('data-interval-id');
+    }
 });

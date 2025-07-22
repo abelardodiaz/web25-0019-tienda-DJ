@@ -73,6 +73,9 @@ urlpatterns = [
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     
     path('producto/<slug:slug>/', catalogo_views.detalle_producto, name='detalle_producto'),
+    path('add-to-cart/<slug:slug>/', catalogo_views.add_to_cart, name='add_to_cart'),
+    path('update-cart/', catalogo_views.update_cart, name='update_cart'),
+    path('canasta/', catalogo_views.cart_view, name='canasta'),
     
     path('', catalogo_views.catalogo_publico, name='home'),
     path('catalogo/', catalogo_views.catalogo_publico, name='catalogo'),

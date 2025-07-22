@@ -42,55 +42,50 @@
     <!-- Grid de productos -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {% for producto in productos %}
-        <a href="{% url 'detalle_producto' producto.slug %}">
-        <div class="product-card bg-dark-800 rounded-xl p-4 transition-all duration-300 border border-dark-700 hover:border-accent-500/30">
+        <a href="{% url 'detalle_producto' producto.slug %}" class="product-card bg-dark-800 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl">
+            <!-- Product image -->
             <div class="relative">
-                <!-- Imagen del producto -->
                 {% if producto.main_image %}
-                
-                <img src="{{ producto.main_image }}" alt="{{ producto.title }}" 
-                     class="w-full h-48 object-cover rounded-xl mb-4">
+                <img src="{{ producto.main_image }}" alt="{{ producto.title }}" class="w-full h-48 object-cover">
                 {% else %}
-                <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48 mb-4 flex items-center justify-center">
-                    <i class="fas fa-image text-4xl text-gray-400"></i>
+                <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48 flex items-center justify-center">
+                    <i class="fas fa-image text-3xl text-gray-400"></i>
                 </div>
                 {% endif %}
-                
-                <!-- Botón de favoritos -->
-                <button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center hover:bg-accent-500">
-                    <i class="fas fa-heart text-gray-300"></i>
-                </button>
             </div>
-            
-            <div class="mb-2">
-                <!-- Título y marca -->
-                <h3 class="font-semibold text-lg">{{ producto.title }}</h3>
+
+            <!-- Product info -->
+            <div class="p-4">
+                <h3 class="font-medium text-lg mb-1">{{ producto.title }}</h3>
                 <p class="text-gray-400 text-sm">{{ producto.brand.name }}</p>
-            </div>
-            
-            <div class="flex justify-between items-center">
-                <div>
-                    <!-- Precio con descuento -->
-                    <p class="text-accent-500 font-bold text-xl">
-                        ${{ producto.discount_price|floatformat:2 }} USD
-                    </p>
-                    
-                    <!-- Existencias solo en SLP -->
-                    <p class="text-gray-400 text-sm mt-1">
-                        {% if producto.slp_stock_sum > 0 %}
-                            {{ producto.slp_stock_sum }} disponibles en San Luis Potos&iacute;
-                        {% else %}
-                            Agotado
-                        {% endif %}
-                    </p>
-                </div>
                 
-                <!-- Botón añadir al carrito -->
-                <button class="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center hover:bg-accent-400 transition">
-                    <i class="fas fa-plus text-dark-900"></i>
-                </button>
+                <!-- Price, stock and add button -->
+                <div class="mt-3 flex justify-between items-center">
+                    <div>
+                        <p class="text-accent-500 font-bold text-xl">
+                            {{ producto.mxn_price|thousands_sep }}
+                        </p>
+                        <p class="text-gray-400 text-sm mt-1">
+                            {% if producto.slp_stock_sum > 0 %}
+                                {{ producto.slp_stock_sum }} disponibles
+                            {% else %}
+                                Agotado
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if producto.slp_stock_sum > 0 %}
+                    <button class="add-to-cart w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center hover:bg-accent-400 transition" data-slug="{{ producto.slug }}">
+                        <i class="fas fa-plus text-dark-900"></i>
+                    </button>
+                    {% else %}
+                    <button class="w-10 h-10 rounded-full bg-gray-500 flex items-center justify-center cursor-not-allowed opacity-50" disabled>
+                        <i class="fas fa-ban text-dark-900"></i>
+                    </button>
+                    {% endif %}
+                </div>
             </div>
-        </div>
+        </a>
         {% empty %}
         <div class="col-span-full text-center py-12">
             <i class="fas fa-box-open text-3xl text-gray-500 mb-4"></i>

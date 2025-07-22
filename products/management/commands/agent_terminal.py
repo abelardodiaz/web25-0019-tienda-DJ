@@ -15,6 +15,7 @@ from products.models import Feature, Category, Brand  # for details
 from django.core.exceptions import ObjectDoesNotExist
 import logging
 import datetime, time, pytz
+from core.utils import calculate_mxn_price
 
 last_results_ids = []  # Global for last search IDs
 last_product_details = None  # Global for last product details
@@ -72,7 +73,7 @@ def search_products(query: str) -> list[dict]:
         if price_obj:
             # Prefer discount, then special, then normal
             price_value = (
-                price_obj.discount or price_obj.special or price_obj.normal
+                calculate_mxn_price(price_obj, None)
             )
         else:
             price_value = "N/A"
@@ -142,7 +143,7 @@ def get_product_details(index: str) -> dict:
 
     try:
         price_obj = product.prices
-        price_value = price_obj.discount or price_obj.special or price_obj.normal
+        price_value = calculate_mxn_price(price_obj, None)
     except Price.DoesNotExist:
         price_value = "N/A"
 

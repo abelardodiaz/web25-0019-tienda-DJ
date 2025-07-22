@@ -43,6 +43,7 @@ class CustomUser(AbstractUser):
         blank=True,
         verbose_name=_('Teléfono')
     )
+    descuento_cliente = models.FloatField(default=0.0, verbose_name="Descuento Cliente (%)")
     last_login = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

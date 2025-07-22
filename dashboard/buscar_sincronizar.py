@@ -572,6 +572,8 @@ def sincronizar_productos_background(selected_ids, cache_key=None):
                     "special": float(pr.get("precio_especial") or 0),
                     "discount": float(pr.get("precio_descuento") or 0),
                     "list_price": float(pr.get("precio_lista") or 0),
+                    'margen_prod': 0.20,
+                    'descuento_prod': 0.0
                 }
                 try:
                     if not sync_product_price(producto, price_data):
