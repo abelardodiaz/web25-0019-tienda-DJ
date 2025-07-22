@@ -51,12 +51,15 @@
                     <input 
                         type="text" 
                         name="q"
+                        id="search-input"
+                        autocomplete="off"
                         placeholder="Buscar productos en la tienda"
                         class="w-full bg-dark-700 text-gray-200 rounded-lg py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-accent-500"
                         value="{{ request.GET.q }}"
                     >
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                 </form>
+                <div id="instant-results" class="absolute z-50 w-full bg-dark-800 border border-dark-600 mt-1 rounded-lg shadow-lg hidden"></div>
             </div>
             
             <!-- Panel de búsqueda móvil - CAMBIO DE ID -->
@@ -66,12 +69,15 @@
                         <input 
                             type="text" 
                             name="q"
+                            id="mobile-search-input"
+                            autocomplete="off"
                             placeholder="Buscar productos..."
                             class="w-full bg-dark-700 text-gray-200 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:ring-2 focus:ring-accent-500"
                             value="{{ request.GET.q }}"
                         >
                         <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
                     </form>
+                    <div id="mobile-instant-results" class="absolute z-50 w-full bg-dark-800 border border-dark-600 mt-1 rounded-lg shadow-lg hidden"></div>
                     <button id="search-close" class="text-gray-400 hover:text-white ml-3">
                         <i class="fas fa-times text-2xl"></i>
                     </button>
@@ -180,7 +186,7 @@
         </div>
 
         <!-- Lista de artículos -->
-        <div class="flex-1 space-y-4 overflow-y-auto pr-1">
+        <div id="cart-items-list" class="flex-1 space-y-4 overflow-y-auto pr-1">
             {% for item in cart_items %}
             <!-- Ítem -->
             <div class="flex items-center">

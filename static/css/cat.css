@@ -258,4 +258,39 @@ button:disabled {
     background-color: #EF4444; /* red error */
 }
 
+#instant-results,
+#mobile-instant-results {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 600px; /* Aumenta si es necesario para mejor ajuste */
+    background-color: #1E1E1E;
+    border: 1px solid #333333;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    margin-top: 0.75rem; /* Aumenta el margen superior para evitar empalme */
+    z-index: 50;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+}
+
+#instant-results.hidden,
+#mobile-instant-results.hidden {
+    display: none;
+}
+
+/* Estilos para items dentro de los resultados */
+.instant-result-item {
+    display: block;
+    padding: 1rem;
+    color: #D1D5DB; /* text-gray-300 */
+    text-decoration: none;
+}
+
+.instant-result-item:hover {
+    background-color: #252525; /* hover:bg-dark-700 */
+}
+
 

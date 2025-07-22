@@ -114,6 +114,9 @@ addButtons.forEach(button => {
                 toast.classList.remove('hidden');
                 toast.textContent = '¡Producto añadido al carrito!';
                 setTimeout(() => toast.classList.add('hidden'), 2500);
+                
+                // New: Update sidebar cart
+                updateSidebarCart(data);
             }
         } catch (error) {
             console.error('Error adding to cart:', error);
@@ -184,6 +187,9 @@ document.querySelectorAll('.add-to-cart:not(:disabled)').forEach(button => {
                 toast.classList.add('bg-green-500');
                 toast.classList.remove('hidden');
                 setTimeout(() => toast.classList.add('hidden'), 2500);
+                
+                // New: Update sidebar cart
+                updateSidebarCart(data);
             } else {
                 throw new Error(data.error || 'Unknown error');
             }
@@ -204,6 +210,35 @@ document.querySelectorAll('.add-to-cart:not(:disabled)').forEach(button => {
     });
 });
 
+// New function to update sidebar
+function updateSidebarCart(data) {
+    const itemsList = document.getElementById('cart-items-list');
+    if (!itemsList) return;
+    
+    itemsList.innerHTML = '';
+    
+    if (data.cart_items.length === 0) {
+        itemsList.innerHTML = '<p class="text-center text-gray-400">Tu carrito está vacío</p>';
+    } else {
+        data.cart_items.forEach(item => {
+            const itemHTML = `
+                <div class="flex items-center">
+                    <img src="${item.image}" class="w-16 h-16 object-cover rounded mr-4" alt="${item.title}">
+                    <div class="flex-1">
+                        <p class="font-medium">${item.title}</p>
+                        <p class="text-sm text-gray-400">${item.price.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})} x ${item.qty}</p>
+                    </div>
+                    <p class="font-medium">${item.total.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                </div>
+            `;
+            itemsList.innerHTML += itemHTML;
+        });
+    }
+    
+    document.getElementById('cart-count').textContent = data.cart_count;
+    document.getElementById('cart-total').textContent = data.grand_total.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
 // Buscar y eliminar cualquier intervalo de rotación automática
 document.querySelectorAll('.carousel').forEach(carousel => {
     const autoRotate = carousel.dataset.autoRotate;
@@ -212,4 +247,57 @@ document.querySelectorAll('.carousel').forEach(carousel => {
         carousel.removeAttribute('data-auto-rotate');
         carousel.removeAttribute('data-interval-id');
     }
+});
+
+// Instant Search Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInputs = [
+        { input: document.getElementById('search-input'), results: document.getElementById('instant-results') },
+        { input: document.getElementById('mobile-search-input'), results: document.getElementById('mobile-instant-results') }
+    ];
+
+    searchInputs.forEach(({ input, results }) => {
+        if (input && results) {
+            let debounceTimer;
+            input.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const query = this.value.trim();
+                if (query.length > 2) {
+                    debounceTimer = setTimeout(() => {
+                        fetch(`/instant-search/?q=${encodeURIComponent(query)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                results.innerHTML = '';
+                                if (data.length === 0) {
+                                    results.innerHTML = '<div class="p-4 text-gray-400">No se encontraron productos</div>';
+                                } else {
+                                    data.forEach(product => {
+                                        const item = document.createElement('a');
+                                        item.href = product.url;
+                                        item.className = 'block p-4 hover:bg-dark-700 border-b border-dark-600 last:border-0';
+                                        item.innerHTML = `
+                                            <div class="font-medium">${product.name}</div>
+                                            <div class="text-sm text-accent-400">${product.price}</div>
+                                        `;
+                                        results.appendChild(item);
+                                    });
+                                }
+                                results.classList.remove('hidden');
+                            })
+                            .catch(error => console.error('Error:', error));
+                    }, 300);
+                } else {
+                    results.classList.add('hidden');
+                    results.innerHTML = '';
+                }
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!results.contains(e.target) && e.target !== input) {
+                    results.classList.add('hidden');
+                }
+            });
+        }
+    });
 });

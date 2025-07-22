@@ -80,4 +80,5 @@ urlpatterns = [
     path('', catalogo_views.catalogo_publico, name='home'),
     path('catalogo/', catalogo_views.catalogo_publico, name='catalogo'),
     path('agente/', catalogo_views.agente_chat, name='agente_chat'),
+    path('instant-search/', catalogo_views.instant_search, name='instant_search'),
 ]

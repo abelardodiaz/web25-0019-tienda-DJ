@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+from django.urls import reverse
 
 SLP_SLUG = "san_luis_potosi"
 
@@ -178,7 +179,31 @@ def add_to_cart(request, slug):
     
     request.session['cart'] = cart
     cart_count = sum(item['qty'] for item in cart.values())
-    return JsonResponse({'success': True, 'cart_count': cart_count})
+    
+    # Compute detailed cart data for JSON response
+    cart_items = []
+    total_sub = Decimal('0.00')
+    for prod_id, data in cart.items():
+        price = Decimal(data['price'])
+        qty = data['qty']
+        item_total = price * Decimal(qty)
+        cart_items.append({
+            'image': data.get('image', ''),
+            'title': data['title'],
+            'price': float(price.quantize(Decimal('0.01'))),
+            'qty': qty,
+            'total': float(item_total.quantize(Decimal('0.01')))
+        })
+        total_sub += item_total
+    iva = (total_sub * Decimal(settings.IVA)).quantize(Decimal('0.01'))
+    grand_total = (total_sub + iva).quantize(Decimal('0.01'))
+    
+    return JsonResponse({
+        'success': True,
+        'cart_count': cart_count,
+        'cart_items': cart_items,
+        'grand_total': float(grand_total)
+    })
 
 @require_POST
 def update_cart(request):
@@ -243,3 +268,24 @@ def cart_view(request):
         'grand_total': grand_total
     }
     return render(request, 'catalogo/canasta.html', context)
+
+def instant_search(request):
+    query = request.GET.get('q', '')
+    if not query:
+        return JsonResponse([], safe=False)
+    
+    products = Product.objects.filter(
+        Q(title__icontains=query) | 
+        Q(model__icontains=query) | 
+        Q(description__icontains=query)
+    ).filter(visible=True)[:10]
+    
+    results = [
+        {
+            'name': p.title,
+            'url': reverse('detalle_producto', args=[p.slug]),
+            'price': str(calculate_mxn_price(p.prices, request.user)) if hasattr(p, 'prices') else 'N/A'
+        } for p in products
+    ]
+    
+    return JsonResponse(results, safe=False)
