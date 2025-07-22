@@ -1,6 +1,6 @@
 # Archivos de configuración sensibles
 config.py
-.env
+#.env
 secrets.json
 
 # Archivos y carpetas generados por sistemas operativos
