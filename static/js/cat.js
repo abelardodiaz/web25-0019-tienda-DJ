@@ -144,6 +144,10 @@ function getCookie(name) {
             }
         }
     }
+    // Fallback: use global variable set server-side if cookie not present
+    if (!cookieValue && window.CSRF_TOKEN) {
+        cookieValue = window.CSRF_TOKEN;
+    }
     return cookieValue;
 }
 
@@ -166,7 +170,8 @@ document.querySelectorAll('.add-to-cart:not(:disabled)').forEach(button => {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrftoken
-                }
+                },
+                credentials: 'include'  // Added to ensure cookies are sent with the request
             });
             console.log('Response status:', response.status);
             if (!response.ok) {
@@ -237,6 +242,65 @@ function updateSidebarCart(data) {
     
     document.getElementById('cart-count').textContent = data.cart_count;
     document.getElementById('cart-total').textContent = data.grand_total.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+// NUEVO: Vaciar carrito desde el sidebar
+const cartEmptyBtn = document.getElementById('cart-empty');
+if (cartEmptyBtn) {
+    cartEmptyBtn.addEventListener('click', async () => {
+        try {
+            const csrftoken = getCookie('csrftoken');
+            const response = await fetch('/update-cart/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: new URLSearchParams({ action: 'clear' })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.success) {
+                // Actualizar recuento en el icono del carrito del header
+                const cartCountSpan = document.querySelector('#cart-toggle span');
+                if (cartCountSpan) {
+                    cartCountSpan.textContent = '0';
+                    cartCountSpan.classList.remove('bg-red-500');
+                    cartCountSpan.classList.add('bg-gray-500');
+                }
+                // Actualizar recuento y total dentro del sidebar
+                const cartCountEl = document.getElementById('cart-count');
+                if (cartCountEl) cartCountEl.textContent = '0';
+                const cartTotalEl = document.getElementById('cart-total');
+                if (cartTotalEl) cartTotalEl.textContent = '0.00';
+                // Vaciar lista de items
+                const itemsList = document.getElementById('cart-items-list');
+                if (itemsList) {
+                    itemsList.innerHTML = '<p class="text-center text-gray-400">Tu carrito está vacío</p>';
+                }
+                // Mostrar toast
+                if (toast) {
+                    toast.textContent = '¡Carrito vaciado!';
+                    toast.classList.remove('hidden');
+                    setTimeout(() => toast.classList.add('hidden'), 2200);
+                }
+            }
+        } catch (error) {
+            console.error('Error clearing cart:', error);
+            if (toast) {
+                toast.textContent = 'Error al vaciar el carrito';
+                toast.classList.add('bg-red-500');
+                toast.classList.remove('hidden');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('bg-red-500');
+                }, 2500);
+            }
+        }
+    });
 }
 
 // Buscar y eliminar cualquier intervalo de rotación automática

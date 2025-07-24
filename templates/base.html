@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="{% static 'css/cat.css' %}">
 </head>
 <body class="bg-dark-900">
+    <script>window.CSRF_TOKEN = '{{ csrf_token }}';</script>
     <!-- Header -->
     <header class="sticky top-0 z-50 bg-dark-800 border-b border-dark-600 shadow-lg">
         <div class="container mx-auto px-4 py-4 flex items-center justify-between">
