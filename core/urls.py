@@ -30,6 +30,7 @@ from django.contrib.auth import authenticate, login as auth_login
 from django.urls import path
 from . import views
 from catalogo import views as catalogo_views
+from catalogo.views import instant_search
 
 class CustomLogoutView(View):
     def get(self, request):
@@ -80,5 +81,5 @@ urlpatterns = [
     path('', catalogo_views.catalogo_publico, name='home'),
     path('catalogo/', catalogo_views.catalogo_publico, name='catalogo'),
     path('agente/', catalogo_views.agente_chat, name='agente_chat'),
-    path('instant-search/', catalogo_views.instant_search, name='instant_search'),
+    path('instant-search/', instant_search, name='instant_search'),
 ]

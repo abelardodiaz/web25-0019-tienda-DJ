@@ -12,6 +12,7 @@ from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.urls import reverse
+from django.db.models import Q
 
 SLP_SLUG = "san_luis_potosi"
 
@@ -271,21 +272,16 @@ def cart_view(request):
 
 def instant_search(request):
     query = request.GET.get('q', '')
-    if not query:
-        return JsonResponse([], safe=False)
-    
-    products = Product.objects.filter(
-        Q(title__icontains=query) | 
-        Q(model__icontains=query) | 
-        Q(description__icontains=query)
-    ).filter(visible=True)[:10]
-    
-    results = [
-        {
+    results = []
+    if query:
+        products = Product.objects.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query)
+        )[:5]  # Reduced from 10 to 5 for faster response
+        results = [{
             'name': p.title,
-            'url': reverse('detalle_producto', args=[p.slug]),
-            'price': str(calculate_mxn_price(p.prices, request.user)) if hasattr(p, 'prices') else 'N/A'
-        } for p in products
-    ]
-    
-    return JsonResponse(results, safe=False)
+            'price': f"${calculate_mxn_price(p.prices, request.user) if p.prices else Decimal('0.00')}",
+            'url': reverse('detalle_producto', kwargs={'slug': p.slug}),
+            'image': p.main_image if p.main_image else ''
+        } for p in products]
+    return JsonResponse({'results': results})

@@ -46,41 +46,42 @@
             <!-- Modificar el formulario de búsqueda existente -->
        
             <!-- Barra de búsqueda escritorio -->
-            <div class="hidden md:flex flex-1 max-w-2xl mx-6">
-                <form action="{% url 'home' %}" method="get" class="relative w-full">
+            <div class="hidden md:flex relative flex-1 max-w-2xl mx-6">
+                <form action="{% url 'home' %}" method="get" class="relative w-full" id="search-form">
                     <input 
                         type="text" 
                         name="q"
                         id="search-input"
-                        autocomplete="off"
                         placeholder="Buscar productos en la tienda"
                         class="w-full bg-dark-700 text-gray-200 rounded-lg py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-accent-500"
                         value="{{ request.GET.q }}"
+                        autocomplete="off"
                     >
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                 </form>
-                <div id="instant-results" class="absolute z-50 w-full bg-dark-800 border border-dark-600 mt-1 rounded-lg shadow-lg hidden"></div>
+                <div id="instant-results" class="hidden absolute left-0 top-full bg-dark-800 border border-dark-700 rounded-lg mt-1 w-full max-h-[40rem] overflow-y-auto z-[1000]"></div>
             </div>
             
             <!-- Panel de búsqueda móvil - CAMBIO DE ID -->
             <div id="mobile-search-panel" class="search-panel fixed top-0 left-0 w-full bg-dark-800 shadow-2xl z-50 -translate-y-full">
-                <div class="p-4 flex items-center">
-                    <form action="{% url 'home' %}" method="get" class="relative flex-1">
+                <div class="p-4 flex items-center relative">
+                    <form action="{% url 'home' %}" method="get" class="relative flex-1" id="mobile-search-form">
                         <input 
                             type="text" 
                             name="q"
                             id="mobile-search-input"
-                            autocomplete="off"
                             placeholder="Buscar productos..."
                             class="w-full bg-dark-700 text-gray-200 rounded-lg py-3 px-4 pl-12 focus:outline-none focus:ring-2 focus:ring-accent-500"
                             value="{{ request.GET.q }}"
+                            autocomplete="off"
                         >
                         <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
                     </form>
-                    <div id="mobile-instant-results" class="absolute z-50 w-full bg-dark-800 border border-dark-600 mt-1 rounded-lg shadow-lg hidden"></div>
                     <button id="search-close" class="text-gray-400 hover:text-white ml-3">
                         <i class="fas fa-times text-2xl"></i>
                     </button>
+                    <!-- Mobile instant results container -->
+                    <div id="mobile-instant-results" class="hidden absolute left-0 top-full bg-dark-800 border border-dark-700 rounded-lg mt-1 w-full max-h-[40rem] overflow-y-auto z-[1000]"></div>
                 </div>
             </div>
             

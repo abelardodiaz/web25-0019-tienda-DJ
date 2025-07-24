@@ -114,7 +114,7 @@ addButtons.forEach(button => {
                 toast.classList.remove('hidden');
                 toast.textContent = '¡Producto añadido al carrito!';
                 setTimeout(() => toast.classList.add('hidden'), 2500);
-                
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
                 // New: Update sidebar cart
                 updateSidebarCart(data);
             }
@@ -249,55 +249,76 @@ document.querySelectorAll('.carousel').forEach(carousel => {
     }
 });
 
-// Instant Search Functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInputs = [
-        { input: document.getElementById('search-input'), results: document.getElementById('instant-results') },
-        { input: document.getElementById('mobile-search-input'), results: document.getElementById('mobile-instant-results') }
-    ];
+// Attach instant search to multiple inputs (desktop + mobile)
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('Instant search init');
 
-    searchInputs.forEach(({ input, results }) => {
-        if (input && results) {
-            let debounceTimer;
-            input.addEventListener('input', function() {
-                clearTimeout(debounceTimer);
-                const query = this.value.trim();
-                if (query.length > 2) {
-                    debounceTimer = setTimeout(() => {
-                        fetch(`/instant-search/?q=${encodeURIComponent(query)}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                results.innerHTML = '';
-                                if (data.length === 0) {
-                                    results.innerHTML = '<div class="p-4 text-gray-400">No se encontraron productos</div>';
-                                } else {
-                                    data.forEach(product => {
-                                        const item = document.createElement('a');
-                                        item.href = product.url;
-                                        item.className = 'block p-4 hover:bg-dark-700 border-b border-dark-600 last:border-0';
-                                        item.innerHTML = `
-                                            <div class="font-medium">${product.name}</div>
-                                            <div class="text-sm text-accent-400">${product.price}</div>
-                                        `;
-                                        results.appendChild(item);
-                                    });
-                                }
-                                results.classList.remove('hidden');
-                            })
-                            .catch(error => console.error('Error:', error));
-                    }, 300);
-                } else {
-                    results.classList.add('hidden');
-                    results.innerHTML = '';
-                }
-            });
+    function setupInstantSearch(inputEl, resultsEl) {
+        if (!inputEl || !resultsEl) return;
 
-            // Hide results when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!results.contains(e.target) && e.target !== input) {
-                    results.classList.add('hidden');
-                }
-            });
-        }
-    });
+        let debounceTimer;
+        resultsEl.style.display = 'none';
+
+        inputEl.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            if (query.length === 0) {
+                resultsEl.style.display = 'none';
+                resultsEl.innerHTML = '';
+                return;
+            }
+
+            if (query.length > 2) {
+                debounceTimer = setTimeout(() => {
+                    resultsEl.innerHTML = '<div class="p-4 text-center text-gray-400">Buscando productos...</div>';
+                    resultsEl.style.display = 'block';
+
+                    fetch(`/instant-search/?q=${encodeURIComponent(query)}`)
+                        .then(r => {
+                            if (!r.ok) throw new Error('Error ' + r.status);
+                            return r.json();
+                        })
+                        .then(data => {
+                            resultsEl.innerHTML = '';
+                            if (data.results && data.results.length) {
+                                data.results.forEach(prod => {
+                                    const a = document.createElement('a');
+                                    a.href = prod.url;
+                                    a.className = 'instant-result-item flex justify-between items-center p-3 hover:bg-dark-700 border-b border-dark-700 last:border-0';
+                                    a.innerHTML = `<span class="product-name font-medium text-gray-200">${prod.name}</span><span class="product-price text-sm text-accent-500 ml-4">${prod.price}</span>`;
+                                    resultsEl.appendChild(a);
+                                });
+                            } else {
+                                resultsEl.innerHTML = '<div class="p-4 text-center text-gray-400">No se encontraron productos</div>';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Instant search fetch error:', err);
+                            resultsEl.innerHTML = '<div class="p-4 text-center text-red-400">Error: ' + err.message + '</div>';
+                        });
+                }, 300);
+            } else {
+                resultsEl.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!resultsEl.contains(e.target) && e.target !== inputEl) {
+                resultsEl.style.display = 'none';
+            }
+        });
+    }
+
+    // Desktop selectors
+    setupInstantSearch(
+        document.getElementById('search-input'),
+        document.getElementById('instant-results')
+    );
+
+    // Mobile selectors
+    setupInstantSearch(
+        document.getElementById('mobile-search-input'),
+        document.getElementById('mobile-instant-results')
+    );
 });
