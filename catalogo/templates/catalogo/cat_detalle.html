@@ -186,7 +186,7 @@
         const nextBtn = document.getElementById('next');
         const thumbnails = document.querySelectorAll('.thumbnail');
         let currentIndex = 0;
-        let rotationInterval;
+        let rotationInterval = null;
 
         function showImage(index) {
             images.forEach((img, i) => {
@@ -206,41 +206,32 @@
         }
 
         function startRotation() {
-            rotationInterval = setInterval(nextImage, 3000); // Rotate every 3 seconds
+            // Deshabilitado: no rotación automática
         }
 
         function stopRotation() {
-            clearInterval(rotationInterval);
+            if (rotationInterval) clearInterval(rotationInterval);
         }
 
         // Initial show
-        showImage(0);
-        startRotation();
+        showImage(0);  // No auto-rotación
 
         // Events
         prevBtn.addEventListener('click', () => {
-            stopRotation();
             prevImage();
-            startRotation();
         });
 
         nextBtn.addEventListener('click', () => {
-            stopRotation();
             nextImage();
-            startRotation();
         });
 
         thumbnails.forEach((thumb, index) => {
             thumb.addEventListener('click', () => {
-                stopRotation();
                 showImage(index + 1); // +1 because 0 is main image
-                startRotation();
             });
         });
 
-        // Pause on hover
-        carousel.addEventListener('mouseenter', stopRotation);
-        carousel.addEventListener('mouseleave', startRotation);
+        // Ya no pausamos/reanudamos porque no hay rotación
     });
 </script>
 {% endblock %} 

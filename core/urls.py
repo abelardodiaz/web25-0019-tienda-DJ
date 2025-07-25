@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
-from django.contrib.auth.views import LogoutView, LoginView
+from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from .views import CustomPasswordChangeView
 from django.views import View
@@ -60,7 +60,7 @@ urlpatterns = [
     ), name='login'),
 
  
-    path('logout/', LogoutView.as_view(next_page='/'), name='logout'),
+    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
 
 
     path('account/profile/', login_required(TemplateView.as_view(template_name='users/profile.html')), name='profile'),

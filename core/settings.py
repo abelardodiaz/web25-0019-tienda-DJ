@@ -184,6 +184,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# --------------------------------------------------
+#  Autenticación: email o WhatsApp
+# --------------------------------------------------
+
+AUTHENTICATION_BACKENDS = [
+    'core.backends.WhatsAppOrEmailBackend',  # nuestro backend extendido
+    'django.contrib.auth.backends.ModelBackend',  # respaldo por defecto
+]
+
 # Custom user model
 AUTH_USER_MODEL = 'users.CustomUser'
 

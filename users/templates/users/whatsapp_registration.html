@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-dark-800 p-8 rounded-lg shadow-md mt-8">
+    <h2 class="text-2xl font-bold mb-6 text-center">Verifica tu número de WhatsApp</h2>
+    <p class="text-gray-400 mb-6 text-center">
+        Ingresa tu número. Te enviaremos un código de 6 dígitos para confirmar tu identidad.
+    </p>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}<div class="flex items-center">
+            <img 
+                src="/static/img/mexico-flag.png" 
+                alt="Bandera de México" 
+                class="w-6 h-4 mr-2 object-contain"
+                onerror="this.onerror=null; this.parentNode.innerHTML='🇲🇽'"
+            >
+            {{ form.country_code|add_class:"w-10 bg-dark-700 text-gray-300 rounded-l-lg text-center py-3 text-xl mr-1" }}
+            {{ form.phone|add_class:"w-40 bg-dark-700 text-gray-200 rounded-r-lg px-4 py-3 text-xl tracking-wider" }}
+        </div>
+        {% if form.phone.errors %}
+            <p class="text-red-500 text-sm">{{ form.phone.errors.0 }}</p>
+        {% endif %}
+        {% if duplicate %}
+          <p class="text-gray-400 mt-2 text-sm">¿Ya tienes cuenta? <a href="{% url 'login' %}?next={{ request.GET.next|default:request.path }}" class="text-accent-500 underline">Inicia sesión aquí</a></p>
+        {% elif not_registered %}
+          <p class="text-gray-400 mt-2 text-sm">¿No tienes cuenta? <a href="{% url 'users:register_choice' %}?next={{ request.GET.next|default:request.path }}" class="text-accent-500 underline">Regístrate aquí</a></p>
+        {% endif %}
+        {% if form.non_field_errors %}
+            <p class="text-red-500 text-sm">{{ form.non_field_errors.0 }}</p>
+        {% endif %}
+        <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg">Enviar código</button>
+    </form>
+
+    <!-- Recordatorio de inicio de sesión se muestra arriba si el número ya existe -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('input[name="phone"]').focus();
+        });
+    </script>
+</div>
+{% endblock %} 

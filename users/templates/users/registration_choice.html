@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-dark-800 p-8 rounded-lg shadow-md mt-8">
+    <h2 class="text-2xl font-bold mb-6 text-center">Crea tu cuenta</h2>
+    <p class="text-gray-400 mb-6 text-center">
+        Regístrate fácilmente usando tu email o número de WhatsApp. 
+        Con WhatsApp, te enviaremos un código de verificación para confirmar.
+        ¡Es rápido y seguro!
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="flex flex-col space-y-4">
+            <button type="submit" name="auth_method" value="EM" class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg">
+                Registrarme con Email
+            </button>
+            <button type="submit" name="auth_method" value="WA" class="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg">
+                Registrarme con WhatsApp
+            </button>
+        </div>
+    </form>
+    <p class="mt-6 text-center text-gray-400">
+        ¿Ya eres cliente? <a href="{% url 'login' %}" class="text-accent-500 hover:underline">Inicia sesión</a>
+    </p>
+</div>
+{% endblock %} 
