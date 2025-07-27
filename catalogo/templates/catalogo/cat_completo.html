@@ -63,7 +63,7 @@
                 <div class="mt-3 flex justify-between items-center">
                     <div>
                         <p class="text-accent-500 font-bold text-xl">
-                            {{ producto.mxn_price|thousands_sep }}
+                            ${{ producto.mxn_price|thousands_sep }}
                         </p>
                         <p class="text-gray-400 text-sm mt-1">
                             {% if producto.slp_stock_sum > 0 %}

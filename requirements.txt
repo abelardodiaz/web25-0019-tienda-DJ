@@ -18,3 +18,5 @@ pytz
 langchain_openai
 langchain
 twilio
+tabulate
+django-ckeditor-5

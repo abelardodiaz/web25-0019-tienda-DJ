@@ -15,6 +15,8 @@ from django.utils import timezone
 from .forms import WhatsAppNumberForm, VerifyCodeForm
 from .models import CustomUser, WhatsAppVerification
 from .utils import generate_verification_code, verification_expiry, send_whatsapp_code
+from core.utils import validate_next_url
+from .decorators import unauthenticated_user
 
 
 # -----------------------------
@@ -22,6 +24,7 @@ from .utils import generate_verification_code, verification_expiry, send_whatsap
 # -----------------------------
 
 
+@unauthenticated_user
 def register_choice(request):
     """Muestra una página con botones para elegir Email o WhatsApp."""
     if request.method == "POST":
@@ -33,9 +36,7 @@ def register_choice(request):
 
     # Guardar página previa: priorizar 'next' si existe, sino el referer
     prev_page = request.GET.get('next') or request.META.get('HTTP_REFERER')
-    if prev_page:
-        request.session['redirect_after_register'] = prev_page
-
+    request.session['redirect_after_register'] = validate_next_url(prev_page, request)
     return render(request, "users/registration_choice.html")
 
 
@@ -44,26 +45,32 @@ def register_choice(request):
 # -----------------------------
 
 
+@method_decorator(unauthenticated_user, name='dispatch')
 class WhatsAppRegistrationView(View):
     """View para REGISTRO por WhatsApp (crea nuevo usuario si no existe)."""
     template_name = "users/whatsapp_registration.html"
 
     def get(self, request):
-        # Si viene ?next= y aún no hay redirect almacenado, guardarlo
-        if 'redirect_after_register' not in request.session:
-            prev_page = request.GET.get('next') or request.META.get('HTTP_REFERER')
-            if prev_page and 'register' not in prev_page and 'whatsapp' not in prev_page:
-                request.session['redirect_after_register'] = prev_page
-
-        form = WhatsAppNumberForm()
-        return render(request, self.template_name, {"form": form})
+        # Preservar parámetro next explícitamente
+        next_param = request.GET.get('next', '')
+        if next_param:
+            request.session['redirect_after_register'] = validate_next_url(next_param, request)
+        elif 'redirect_after_register' not in request.session:
+            referer = request.META.get('HTTP_REFERER', '')
+            request.session['redirect_after_register'] = validate_next_url(referer, request)
+        
+        form = WhatsAppNumberForm() # Añadir esta línea
+        context = {
+            'form': form,  # Formulario esencial
+            'next_param': next_param
+        }
+        return render(request, self.template_name, context)
 
     def post(self, request):
-        # No sobrescribir redirect si ya existe
-        if 'redirect_after_register' not in request.session:
-            prev_page = request.GET.get('next') or request.POST.get('next') or request.META.get('HTTP_REFERER')
-            if prev_page and 'register' not in prev_page and 'whatsapp' not in prev_page:
-                request.session['redirect_after_register'] = prev_page
+        # Preservar next si viene en POST
+        next_param = request.POST.get('next', '')
+        if next_param:
+            request.session['redirect_after_register'] = validate_next_url(next_param, request)
         # Flag para acción: registro (crear si no existe)
         request.session['whatsapp_action'] = 'register'
         form = WhatsAppNumberForm(request.POST, require_unique=True)
@@ -100,8 +107,25 @@ class WhatsAppRegistrationView(View):
 # -----------------------------
 
 
+@method_decorator(unauthenticated_user, name='dispatch')
 class WhatsAppLoginView(WhatsAppRegistrationView):
     """View para LOGIN por WhatsApp (solo si el número ya existe)."""
+
+    def get(self, request):
+        # Preservar parámetro next explícitamente
+        next_param = request.GET.get('next', '')
+        if next_param:
+            request.session['redirect_after_register'] = validate_next_url(next_param, request)
+        elif 'redirect_after_register' not in request.session:
+            referer = request.META.get('HTTP_REFERER', '')
+            request.session['redirect_after_register'] = validate_next_url(referer, request)
+        
+        form = WhatsAppNumberForm() # Añadir esta línea
+        context = {
+            'form': form,  # Formulario esencial
+            'next_param': next_param
+        }
+        return render(request, self.template_name, context)
 
     def post(self, request):
         # Flag para acción: login (no crear nuevo)
@@ -138,6 +162,7 @@ class WhatsAppLoginView(WhatsAppRegistrationView):
 # -----------------------------
 
 
+@method_decorator(unauthenticated_user, name='dispatch')
 class VerifyWhatsAppCodeView(View):
     """Verificación común para login/register, basada en flag de sesión."""
     template_name = "users/verify_code.html"
@@ -270,18 +295,8 @@ class VerifyWhatsAppCodeView(View):
 
         # Redirección mejorada
         redirect_to = request.session.pop('redirect_after_register', None)
-        if not redirect_to:
-            # Evitar redirigir a páginas de registro
-            referer = request.META.get('HTTP_REFERER', '')
-            if 'register' not in referer and 'whatsapp' not in referer:
-                redirect_to = referer
-        
-        # Limpia sesión y registro de verificación (movido aquí para asegurar)
-        request.session.pop('whatsapp_action', None)
-        request.session.pop("wa_number", None)
-        record.delete()
-
-        return redirect(redirect_to or '/')
+        safe_redirect = validate_next_url(redirect_to, request)
+        return redirect(safe_redirect or '/')
 
 
 @method_decorator(csrf_protect, name='dispatch')

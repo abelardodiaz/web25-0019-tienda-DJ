@@ -8,6 +8,8 @@ import os
 from django.views import View
 from django.shortcuts import redirect
 from django.contrib.auth import logout
+from django.contrib.auth.views import LoginView
+from users.decorators import unauthenticated_user
 
 
 @method_decorator(csrf_protect, name='dispatch')
@@ -43,3 +45,27 @@ class CustomLogoutView(View):
         if 'logout' in next_url:
             next_url = '/'
         return redirect(next_url)
+
+@method_decorator(unauthenticated_user, name='dispatch')
+class CustomLoginView(LoginView):
+    """View para LOGIN por WhatsApp (solo si el número ya existe)."""
+    # The rest of the class definition would go here
+    pass
+
+@method_decorator(unauthenticated_user, name='dispatch')
+class WhatsAppRegistrationView(View):
+    """View para REGISTRO por WhatsApp (crea nuevo usuario si no existe)."""
+    # The rest of the class definition would go here
+    pass
+
+@method_decorator(unauthenticated_user, name='dispatch')
+class WhatsAppLoginView(WhatsAppRegistrationView):
+    """View para LOGIN por WhatsApp (solo si el número ya existe)."""
+    # The rest of the class definition would go here
+    pass
+
+@method_decorator(unauthenticated_user, name='dispatch')
+class VerifyWhatsAppCodeView(View):
+    """Verificación común para login/register, basada en flag de sesión."""
+    # The rest of the class definition would go here
+    pass

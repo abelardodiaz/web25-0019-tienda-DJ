@@ -1,4 +1,3 @@
-
 """
 URL configuration for core project.
 
@@ -17,9 +16,9 @@ Including another URLconf
 """
 #file: core/urls.py
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse
 from django.contrib.auth import views as auth_views
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from .views import CustomPasswordChangeView
@@ -31,12 +30,27 @@ from django.urls import path
 from . import views
 from catalogo import views as catalogo_views
 from catalogo.views import instant_search
+from core.utils import validate_next_url
+from users.decorators import unauthenticated_user
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth import logout
+from django.shortcuts import render
+from django.utils.text import slugify
+import itertools
+from products.models import Category, Brand
+from django.http import QueryDict
 
 class CustomLogoutView(View):
     def get(self, request):
-        # Borrar sesión manualmente
-        request.session.flush()  # <-- ¡Destruye toda la sesión!
-        return redirect('/')  # Redirige a home
+        # Show a confirmation page with a form
+        next_url = request.GET.get('next', '/')
+        return render(request, 'users/logout.html', {'next': next_url})
+
+    def post(self, request):
+        logout(request)
+        next_url = request.POST.get('next', '/')
+        return redirect(next_url)
 
 LOGIN_URL = 'login'  # Nombre de tu URL de login
 LOGIN_REDIRECT_URL = '/dashboard/'  # URL a redirigir después de login
@@ -44,23 +58,33 @@ LOGOUT_REDIRECT_URL = '/'  # URL a redirigir después de logout
 
 # Add this custom LoginView
 class CustomLoginView(LoginView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        next_url = self.request.GET.get('next', '')
+        context['next'] = validate_next_url(next_url, self.request)
+        return context
+
     def form_valid(self, form):
         """Security check complete. Log the user in and redirect."""
         auth_login(self.request, form.get_user())
         next_url = self.request.POST.get('next', self.get_success_url())
-        return HttpResponseRedirect(next_url)
+        safe_next = validate_next_url(next_url, self.request)
+        return HttpResponseRedirect(safe_next)
     
 urlpatterns = [
     path('admin/', admin.site.urls),
    
-    path('login/', CustomLoginView.as_view(
+    path('login/', 
+         CustomLoginView.as_view(
         template_name='users/login.html',
         redirect_authenticated_user=True,
         extra_context={'next': '/dashboard/'}
     ), name='login'),
 
  
-    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
+    path('logout/', 
+     csrf_protect(CustomLogoutView.as_view()),  # Agregar protección CSRF
+     name='logout'),
 
 
     path('account/profile/', login_required(TemplateView.as_view(template_name='users/profile.html')), name='profile'),
@@ -78,8 +102,26 @@ urlpatterns = [
     path('update-cart/', catalogo_views.update_cart, name='update_cart'),
     path('canasta/', catalogo_views.cart_view, name='canasta'),
     
-    path('', catalogo_views.catalogo_publico, name='home'),
-    path('catalogo/', catalogo_views.catalogo_publico, name='catalogo'),
+    # Reemplazar la vista raíz
+    path('', 
+         RedirectView.as_view(url='/catalogo/', permanent=False),  # Redirigir a catálogo
+         name='home'),
+
+    # Nueva vista de catálogo principal
+    path('catalogo/', 
+         catalogo_views.catalogo_publico, 
+         name='catalogo'),
+
     path('agente/', catalogo_views.agente_chat, name='agente_chat'),
     path('instant-search/', instant_search, name='instant_search'),
+]
+
+# New SEO-friendly URLs
+urlpatterns += [
+    path('categoria/<slug:categoria>/', 
+         catalogo_views.catalogo_publico, 
+         name='catalogo_categoria'),
+    path('marca/<slug:marca>/', 
+         catalogo_views.catalogo_publico, 
+         name='catalogo_marca'),
 ]

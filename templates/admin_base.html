@@ -131,20 +131,30 @@
                 <div>
                     <h4 class="font-medium mb-4">Marcas</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="#" class="hover:text-white transition">Electrónica</a></li>
-                        <li><a href="#" class="hover:text-white transition">Hogar</a></li>
-                        <li><a href="#" class="hover:text-white transition">Ropa</a></li>
-                        <li><a href="#" class="hover:text-white transition">Deportes</a></li>
+                        {% for brand in footer_marcas %}
+                        {% if brand.slug %}
+                        <li>
+                            <a href="{% url 'catalogo_marca' marca=brand.slug %}" class="hover:text-white transition">{{ brand.name }}</a>
+                        </li>
+                        {% endif %}
+                        {% empty %}
+                        <li>No hay marcas.</li>
+                        {% endfor %}
                     </ul>
                 </div>
 
                 <div>
                     <h4 class="font-medium mb-4">Categorías</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="#" class="hover:text-white transition">Electrónica</a></li>
-                        <li><a href="#" class="hover:text-white transition">Hogar</a></li>
-                        <li><a href="#" class="hover:text-white transition">Ropa</a></li>
-                        <li><a href="#" class="hover:text-white transition">Deportes</a></li>
+                        {% for category in footer_categorias %}
+                        {% if category.slug %}
+                        <li>
+                            <a href="{% url 'catalogo_categoria' categoria=category.slug %}" class="hover:text-white transition">{{ category.name }}</a>
+                        </li>
+                        {% endif %}
+                        {% empty %}
+                        <li>No hay categorías.</li>
+                        {% endfor %}
                     </ul>
                 </div>
 

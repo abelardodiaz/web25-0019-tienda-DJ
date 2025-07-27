@@ -11,7 +11,7 @@
 <div class="text-gray-400 text-sm mb-6">
     <a href="{% url 'home' %}" class="hover:text-white">Inicio</a> > 
     {% for categoria in breadcrumb_categories %}
-        <a href="{% url 'home' %}?categoria={{ categoria.slug }}" class="hover:text-white">{{ categoria.name }}</a> > 
+        <a href="{% url 'catalogo_categoria' categoria=categoria.slug %}" class="hover:text-white">{{ categoria.name }}</a> > 
     {% endfor %}
     <span class="text-white">{{ producto.title }}</span>
 </div>
@@ -77,7 +77,7 @@
             <!-- Precio -->
             <div class="mb-6">
                 <p class="text-accent-500 font-bold text-3xl">
-                    {{ mxn_price|thousands_sep }}
+                    ${{ mxn_price|thousands_sep }}
                 </p>
             </div>
             

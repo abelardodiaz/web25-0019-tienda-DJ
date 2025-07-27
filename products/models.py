@@ -31,6 +31,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 import bleach
 from django.utils.text import slugify
+import itertools
 
 # ------------------------------------------------------------------
 # ExchangeRate — tabla independiente (MANTENIDA)
@@ -117,12 +118,12 @@ class Brand(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
-            unique_slug = self.slug
-            num = 1
-            while Brand.objects.filter(slug=unique_slug).exists():
-                unique_slug = f"{self.slug}-{num}"
-                num += 1
+            base_slug = slugify(self.name)
+            unique_slug = base_slug
+            for i in itertools.count(1):
+                if not Brand.objects.filter(slug=unique_slug).exists():
+                    break
+                unique_slug = f"{base_slug}-{i}"
             self.slug = unique_slug
         super().save(*args, **kwargs)
 
@@ -150,12 +151,12 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
-            unique_slug = self.slug
-            num = 1
-            while Category.objects.filter(slug=unique_slug).exists():
-                unique_slug = f"{self.slug}-{num}"
-                num += 1
+            base_slug = slugify(self.name)
+            unique_slug = base_slug
+            for i in itertools.count(1):
+                if not Category.objects.filter(slug=unique_slug).exists():
+                    break
+                unique_slug = f"{base_slug}-{i}"
             self.slug = unique_slug
         super().save(*args, **kwargs)
 

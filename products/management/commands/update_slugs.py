@@ -1,22 +1,36 @@
 from django.core.management.base import BaseCommand
-from products.models import Product, Category, Brand
+from products.models import Category, Brand
+from django.utils.text import slugify
+import itertools
 
 class Command(BaseCommand):
-    help = "Genera o actualiza los slugs de todos los productos según la lógica actual."
+    help = 'Update slugs for existing Categories and Brands'
 
-    def handle(self, *args, **options):
-        updated = 0
-        # Update Products
-        for product in Product.objects.all():
-            new_slug = product._generate_slug()
-            if product.slug != new_slug:
-                product.slug = new_slug
-                product.save(update_fields=["slug"])
-                updated += 1
+    def handle(self, *args, **kwargs):
         # Update Categories
         for cat in Category.objects.all():
+            if not cat.slug:
+                base_slug = slugify(cat.name)
+                unique_slug = base_slug
+                for i in itertools.count(1):
+                    if not Category.objects.filter(slug=unique_slug).exclude(id=cat.id).exists():
+                        break
+                    unique_slug = f"{base_slug}-{i}"
+                cat.slug = unique_slug
             cat.save()
+                self.stdout.write(self.style.SUCCESS(f'Updated slug for category: {cat.name} -> {cat.slug}'))
+        
         # Update Brands
         for brand in Brand.objects.all():
+            if not brand.slug:
+                base_slug = slugify(brand.name)
+                unique_slug = base_slug
+                for i in itertools.count(1):
+                    if not Brand.objects.filter(slug=unique_slug).exclude(id=brand.id).exists():
+                        break
+                    unique_slug = f"{base_slug}-{i}"
+                brand.slug = unique_slug
             brand.save()
-        self.stdout.write(self.style.SUCCESS(f"Slugs actualizados: {updated}")) 
+                self.stdout.write(self.style.SUCCESS(f'Updated slug for brand: {brand.name} -> {brand.slug}'))
+        
+        self.stdout.write(self.style.SUCCESS('Successfully updated all slugs!')) 

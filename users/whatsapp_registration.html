@@ -1,0 +1,17 @@
+{% load security_filters %}
+
+<form method="post">
+  {% csrf_token %}
+  <!-- Pasar parámetro next explícitamente -->
+  <input type="hidden" name="next" value="{{ next_param }}">
+  
+  <div class="mb-4">
+    <label class="block text-gray-400 mb-2">Número de WhatsApp</label>
+    <!-- Campo restaurado -->
+    {{ form.whatsapp_number }}
+  </div>
+  
+  <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+    Enviar código
+  </button>
+</form>

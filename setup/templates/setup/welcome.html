@@ -1,15 +1,17 @@
+<!-- setup/templates/setup/welcome.html -->
 {% load static %}
 <!DOCTYPE html>
-<html lang="es" class="bg-gray-900 text-gray-100 h-full">
+<html lang="es" class="bg-gray-900 text-gray-100 min-h-screen">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Configuración Inicial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="{% static 'img/favicon.ico' %}" type="image/x-icon">
 </head>
-<body class="h-full flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
+<body class="min-h-screen p-4">
+    <div class="w-full max-w-md mx-auto mt-4">
         <div class="text-center mb-8">
             <i class="fas fa-rocket text-6xl text-blue-500 mb-4"></i>
             <h1 class="text-3xl font-bold">Configuración Inicial</h1>
@@ -66,12 +68,24 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium mb-1">Contraseña</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium">Contraseña</label>
+                        <div class="flex space-x-2">
+                            <button type="button" 
+                                    class="text-xs text-blue-400 hover:text-blue-300 flex items-center toggle-all-passwords"
+                                    title="Mostrar/ocultar todas las contraseñas">
+                                <i class="fas fa-eye mr-1"></i>
+                                <span>Ver</span>
+                            </button>
+                            <button type="button" 
+                                    class="text-xs text-blue-400 hover:text-blue-300 flex items-center generate-password"
+                                    title="Generar contraseña segura para ambos campos">
+                                <i class="fas fa-key mr-1"></i> Generar
+                            </button>
+                        </div>
+                    </div>
                     <div class="relative">
                         {{ form.password }}
-                        <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="id_password">
-                            <i class="fas fa-eye"></i>
-                        </button>
                     </div>
                     {% if form.password.errors %}
                         <div class="text-red-500 text-sm mt-1">
@@ -104,9 +118,6 @@
                     <label class="block text-sm font-medium mb-1">Confirmar Contraseña</label>
                     <div class="relative">
                         {{ form.password_confirm }}
-                        <button type="button" class="absolute right-3 top-2.5 text-gray-400 hover:text-white toggle-password" data-target="id_password_confirm">
-                            <i class="fas fa-eye"></i>
-                        </button>
                     </div>
                     {% if form.password_confirm.errors %}
                         <div class="text-red-500 text-sm mt-1">
@@ -131,17 +142,19 @@
         </div>
         {% endif %}
 
+        {% if not db_status %}
         <div class="mt-8 text-center text-sm text-gray-500">
             <p>
-                <i class="fas {% if db_status %}{{ db_status.icon }} {{ db_status.color }}{% else %}fa-circle-notch fa-spin{% endif %} mr-2"></i>
-                {% if db_status %}{{ db_status.message }}{% else %}Verificando estado de la base de datos...{% endif %}
+                <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                Verificando estado de la base de datos...
             </p>
         </div>
+        {% endif %}
         
         <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-6">
             <div class="font-bold text-blue-500 flex items-center gap-2">
                 <i class="fas fa-globe"></i>
-                <span>Información del Servidor</span>
+                <span>Informaci&oacute;n del usuario</span>
             </div>
             <p class="mt-2 text-sm">
                 IP Pública: <span class="font-mono">{{ public_ip }}</span>
@@ -152,16 +165,39 @@
 </body>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Toggle password visibility
-        document.querySelectorAll('.toggle-password').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const passwordInput = document.getElementById(targetId);
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                this.querySelector('i').classList.toggle('fa-eye');
-                this.querySelector('i').classList.toggle('fa-eye-slash');
+        // Unified password visibility toggle
+        document.querySelector('.toggle-all-passwords').addEventListener('click', function() {
+            const passwordInput = document.getElementById('id_password');
+            const confirmInput = document.getElementById('id_password_confirm');
+            const currentType = passwordInput.getAttribute('type');
+            const newType = currentType === 'password' ? 'text' : 'password';
+            
+            // Toggle both fields
+            passwordInput.setAttribute('type', newType);
+            confirmInput.setAttribute('type', newType);
+            
+            // Update button text and icon
+            const icon = this.querySelector('i');
+            const textSpan = this.querySelector('span');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+            textSpan.textContent = newType === 'password' ? ' Ver' : ' Ocultar';
+        });
+
+        // Password generator for both fields
+        document.querySelector('.generate-password').addEventListener('click', function() {
+            const passwordInput = document.getElementById('id_password');
+            const confirmInput = document.getElementById('id_password_confirm');
+            const newPassword = generateSecurePassword(24);
+            
+            // Set both fields
+            passwordInput.value = newPassword;
+            confirmInput.value = newPassword;
+            
+            // Trigger validation
+            [passwordInput, confirmInput].forEach(input => {
+                const event = new Event('input', { bubbles: true });
+                input.dispatchEvent(event);
             });
         });
 
@@ -224,6 +260,49 @@
                 document.getElementById('password-match').classList.add('hidden');
             }
         }
+
+        // Password generator function
+        function generateSecurePassword(length = 24) {
+            const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+            const numbers = '0123456789';
+            const specials = '@$!%*?&';
+            const allChars = uppercase + lowercase + numbers + specials;
+            
+            // Ensure at least one of each required character type
+            let password = [
+                uppercase.charAt(Math.floor(Math.random() * uppercase.length)),
+                lowercase.charAt(Math.floor(Math.random() * lowercase.length)),
+                numbers.charAt(Math.floor(Math.random() * numbers.length)),
+                specials.charAt(Math.floor(Math.random() * specials.length))
+            ];
+            
+            // Fill remaining characters
+            for (let i = 4; i < length; i++) {
+                password.push(allChars.charAt(Math.floor(Math.random() * allChars.length)));
+            }
+            
+            // Shuffle the password
+            return password.sort(() => Math.random() - 0.5).join('');
+        }
+
+        // Add tooltip functionality
+        document.querySelectorAll('[title]').forEach(el => {
+            el.addEventListener('mouseenter', function(e) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'absolute bg-black text-white text-xs rounded py-1 px-2 z-50';
+                tooltip.textContent = this.getAttribute('title');
+                tooltip.style.top = `${e.clientY + 15}px`;
+                tooltip.style.left = `${e.clientX}px`;
+                tooltip.id = 'dynamic-tooltip';
+                document.body.appendChild(tooltip);
+            });
+            
+            el.addEventListener('mouseleave', function() {
+                const tooltip = document.getElementById('dynamic-tooltip');
+                if (tooltip) tooltip.remove();
+            });
+        });
     });
 </script>
 </html> 

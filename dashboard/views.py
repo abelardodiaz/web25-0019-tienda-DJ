@@ -27,6 +27,7 @@ from datetime import timedelta
 import requests
 from dashboard.tipo_cambio import obtener_tipo_cambio
 from django.contrib.admin.models import LogEntry, DELETION, ADDITION, CHANGE
+from django.urls import reverse
 
 
 @login_required

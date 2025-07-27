@@ -220,9 +220,23 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
-# CSRF and Session Cookie Settings for Development
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
-CSRF_COOKIE_SECURE = False  # False for development (no HTTPS)
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
+# Configuración CSRF para desarrollo
+if DEBUG:
+    # Permitir todos los orígenes locales en desarrollo
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost:8026',
+        'http://127.0.0.1:8026',
+        'http://localhost:8027',
+        'http://127.0.0.1:8027',
+        'http://0.0.0.0:8026',
+        'http://0.0.0.0:8027',
+    ]
+    
+    # Configuraciones adicionales para desarrollo
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'
+
