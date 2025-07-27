@@ -90,7 +90,7 @@ def gestion_productos(request):
             p.mxn_price = calculate_mxn_price(p.prices, request.user)
         else:
             p.mxn_price = None
-    return render(request, "admin_gestion.html", context)
+    return render(request, "dashboard/admin_gestion.html", context)
 
 @login_required
 @staff_member_required
@@ -137,7 +137,7 @@ def sincronizar_inventarios(request):
         'total_productos': total_productos,
         'sucursales': sucursales,
     }
-    return render(request, 'admin_sinc_inventarios.html', context)
+    return render(request, 'dashboard/admin_sinc_inventarios.html', context)
 
 def get_sync_progress(request):
     cache_key = f'sync_progress_{request.user.id}'

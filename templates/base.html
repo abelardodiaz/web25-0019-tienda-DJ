@@ -100,6 +100,7 @@
                         {{ request.user.username }}
                         {% endif %}
                     </span>
+                </a>
                     <form method="post" action="{% url 'logout' %}" class="inline">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}">
@@ -108,7 +109,7 @@
                         </button>
                     </form>
                 </div>
-                </a>
+                
                 {% else %}
                 <!-- Enlaces para no autenticados -->
                 <a href="{% url 'login' %}?next={{ request.path }}" class="text-gray-400 hover:text-white">Iniciar sesión</a>

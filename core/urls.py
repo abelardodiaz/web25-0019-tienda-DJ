@@ -40,17 +40,7 @@ from django.utils.text import slugify
 import itertools
 from products.models import Category, Brand
 from django.http import QueryDict
-
-class CustomLogoutView(View):
-    def get(self, request):
-        # Show a confirmation page with a form
-        next_url = request.GET.get('next', '/')
-        return render(request, 'users/logout.html', {'next': next_url})
-
-    def post(self, request):
-        logout(request)
-        next_url = request.POST.get('next', '/')
-        return redirect(next_url)
+from django.contrib.auth.views import LogoutView
 
 LOGIN_URL = 'login'  # Nombre de tu URL de login
 LOGIN_REDIRECT_URL = '/dashboard/'  # URL a redirigir después de login
@@ -83,8 +73,8 @@ urlpatterns = [
 
  
     path('logout/', 
-     csrf_protect(CustomLogoutView.as_view()),  # Agregar protección CSRF
-     name='logout'),
+         auth_views.LogoutView.as_view(next_page=LOGOUT_REDIRECT_URL), 
+         name='logout'),
 
 
     path('account/profile/', login_required(TemplateView.as_view(template_name='users/profile.html')), name='profile'),

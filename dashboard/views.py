@@ -58,7 +58,7 @@ def admin_panel(request):
             # total=Sum('total')
         # )['total'] or 0,
     }
-    return render(request, 'admin_panel.html', context)
+    return render(request, 'dashboard/admin_panel.html', context)
 
 @staff_member_required
 def save_syscom_credentials(request):
@@ -134,7 +134,7 @@ def edit_user(request, user_id):
     else:
         form = UserEditForm(instance=user)
     
-    return render(request, 'edit_user.html', {'form': form})
+    return render(request, 'dashboard/edit_user.html', {'form': form})
 
 
 
@@ -195,7 +195,7 @@ def delete_user(request, user_id):
         'can_be_deleted': not protection_reasons
     }
     
-    return render(request, 'delete_user.html', context)
+    return render(request, 'dashboard/delete_user.html', context)
 
 @staff_member_required
 def reset_db_partial(request):
@@ -253,7 +253,7 @@ def reset_db_partial(request):
         return redirect('dashboard:admin_panel')
     
     # Si no es POST, mostrar confirmación
-    return render(request, 'confirm_reset.html', {
+    return render(request, 'dashboard/confirm_reset.html', {
         'reset_type': 'parcial',
         'message': '¿Estás seguro de realizar un reset parcial? Se eliminarán todos los datos excepto usuarios, tokens Syscom y tipos de cambio.'
     })
@@ -295,7 +295,7 @@ def reset_db_full(request):
             return redirect('dashboard:admin_panel')
     
     # Si no es POST, mostrar confirmación
-    return render(request, 'confirm_reset.html', {
+    return render(request, 'dashboard/confirm_reset.html', {
         'reset_type': 'completo',
         'message': '¿Estás seguro de realizar un reset completo? Se eliminarán TODOS los datos. Serás redirigido a la página de configuración inicial.'
     })
@@ -346,7 +346,7 @@ def tipo_cambio(request):
     if now.hour >= 9:
         next_update += timedelta(days=1)
     
-    return render(request, 'tipo_cambio.html', {
+    return render(request, 'dashboard/tipo_cambio.html', {
         'current_rate': latest_rate.rate if latest_rate else None,
         'last_updated': latest_rate.created_at if latest_rate else None,
         'history': history,
@@ -364,4 +364,4 @@ def admin_action_log(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'admin_action_log.html', {'page_obj': page_obj})
+    return render(request, 'dashboard/admin_action_log.html', {'page_obj': page_obj})

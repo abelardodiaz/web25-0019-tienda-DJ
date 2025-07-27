@@ -464,7 +464,7 @@ def sincronizar_productos(request):
             
         return redirect("dashboard:sincronizar")
 
-    return render(request, "admin_sinc.html", {"productos": productos})
+    return render(request, "dashboard/admin_sinc.html", {"productos": productos})
 
 
 def sincronizar_inventario_sucursal(product_ids, branch_slug, cache_key=None):
@@ -696,7 +696,7 @@ def sincronizar_test(request):
             else:
                 messages.error(request, "No se pudo obtener el producto o credenciales inválidas")
 
-    return render(request, "admin_sinc_test.html", context)
+    return render(request, "dashboard/admin_sinc_test.html", context)
 
 
 @login_required
