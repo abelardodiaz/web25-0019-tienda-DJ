@@ -169,7 +169,7 @@ def welcome(request):
             'icon': 'fa-exclamation-triangle',
             'color': 'text-red-500'
         }
-        return render(request, 'setup/welcome.html', {
+        return render(request, 'templates/setup/welcome.html', {
             'db_status': db_status,
             'public_ip': public_ip
         })
@@ -255,7 +255,7 @@ def welcome(request):
         else:
             form = SetupForm()
     
-    return render(request, 'setup/welcome.html', {
+    return render(request, 'templates/setup/welcome.html', {
         'form': form,
         'db_status': db_status,
         'public_ip': public_ip,
