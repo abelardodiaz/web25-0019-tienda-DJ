@@ -41,6 +41,43 @@ class EmailConfigView(UserPassesTestMixin, ...):
         # Solo personal autorizado
         return self.request.user.is_staff
 ```
+############################
+### Generación de `FIELD_ENCRYPTION_KEY`
+
+#### Comando para generar la clave:
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+#### Comando para guardar en `.env`:
+```bash
+echo "FIELD_ENCRYPTION_KEY=\"$(python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')\"" >> .env
+```
+
+#### Explicación:
+1. **Generación de clave**:
+   - Usa el módulo `cryptography` para crear una clave Fernet válida (32 bytes en base64)
+   - `Fernet.generate_key()` crea la clave
+   - `.decode()` la convierte a string
+
+2. **Guardado en `.env`**:
+   - Agrega la clave al final del archivo `.env`
+   - Las comillas (`"`) aseguran manejo correcto de caracteres especiales
+
+#### Verificación:
+```bash
+grep FIELD_ENCRYPTION_KEY .env
+```
+
+#### Para regenerar:
+1. Ejecutar el comando de generación
+2. Abrir `.env`:
+   ```bash
+   nano .env
+   ```
+3. Reemplazar el valor existente
+4. Guardar cambios (Ctrl+O → Enter → Ctrl+X)
+############################################################
 
 ### ✅ Beneficios
 - **Centralización**: Configuración SMTP en base de datos
