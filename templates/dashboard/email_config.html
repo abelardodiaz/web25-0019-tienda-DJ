@@ -1,0 +1,229 @@
+{% extends "admin_base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-gray-200 mb-6">Configuración del Servidor SMTP</h1>
+    
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="bg-red-800 text-red-200 p-4 rounded">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Configuración del Servidor -->
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-200 mb-4">Configuración del Servidor</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Host SMTP -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.host.id_for_label }}" class="block text-gray-300 mb-2">{{ form.host.label }}</label>
+                    {{ form.host }}
+                    {% if form.host.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.host.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Puerto -->
+                <div>
+                    <label for="{{ form.custom_port.id_for_label }}" class="block text-gray-300 mb-2">{{ form.custom_port.label }}</label>
+                    {{ form.custom_port }}
+                    {% if form.custom_port.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.custom_port.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-gray-400 text-xs mt-1">El uso del puerto 25 no está permitido.</p>
+                </div>
+                
+                <!-- Seguridad -->
+                <div>
+                    <label class="block text-gray-300 mb-2">Seguridad</label>
+                    <select id="security-select" class="w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="none">Sin cifrado</option>
+                        <option value="tls">TLS/STARTTLS</option>
+                        <option value="ssl">SSL/TLS</option>
+                    </select>
+                    <!-- Hidden checkboxes para mantener la funcionalidad original -->
+                    {{ form.use_ssl|add_class:"hidden" }}
+                    {{ form.use_tls|add_class:"hidden" }}
+                    {% if form.use_ssl.errors or form.use_tls.errors %}
+                        <p class="text-red-500 text-sm mt-1">
+                            {% for error in form.use_ssl.errors %}{{ error }}{% endfor %}
+                            {% for error in form.use_tls.errors %}{{ error }}{% endfor %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Credenciales -->
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-200 mb-4">Credenciales</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Usuario -->
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="block text-gray-300 mb-2">{{ form.username.label }}</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Contraseña -->
+                <div>
+                    <label for="{{ form.password.id_for_label }}" class="block text-gray-300 mb-2">{{ form.password.label }}</label>
+                    <div class="relative">
+                        {{ form.password }}
+                        <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                                onclick="togglePasswordVisibility()">
+                            <i id="eye-icon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Configuración de Envío -->
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-200 mb-4">Configuración de Envío</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Nombre del remitente -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.from_name.id_for_label }}" class="block text-gray-300 mb-2">{{ form.from_name.label }}</label>
+                    {{ form.from_name }}
+                    {% if form.from_name.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.from_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Activar configuración -->
+                <div class="md:col-span-2">
+                    <label class="inline-flex items-center">
+                        {{ form.active|add_class:"form-checkbox h-4 w-4 text-blue-600" }}
+                        <span class="ml-2 text-gray-300 font-medium">{{ form.active.label }}</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botón Guardar -->
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                <i class="fas fa-save mr-2"></i>
+                Guardar Configuración
+            </button>
+        </div>
+    </form>
+    
+    <!-- Sección de Prueba -->
+    <div class="bg-gray-800 p-6 rounded-lg mt-8">
+        <h2 class="text-xl font-bold text-gray-200 mb-4">
+            <i class="fas fa-paper-plane mr-2"></i>
+            Probar Configuración
+        </h2>
+        <form id="test-email-form" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="test-email" class="block text-gray-300 mb-2">Correo de destino</label>
+                <input type="email" id="test-email" name="email" required 
+                       class="w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500"
+                       placeholder="correo@ejemplo.com">
+            </div>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                <i class="fas fa-envelope mr-2"></i>
+                Enviar Correo de Prueba
+            </button>
+        </form>
+        <div id="test-result" class="mt-4 hidden"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar selector de seguridad
+    const securitySelect = document.getElementById('security-select');
+    const sslCheckbox = document.querySelector('input[name="use_ssl"]');
+    const tlsCheckbox = document.querySelector('input[name="use_tls"]');
+    
+    // Establecer valor inicial del selector basado en checkboxes
+    if (sslCheckbox && sslCheckbox.checked) {
+        securitySelect.value = 'ssl';
+    } else if (tlsCheckbox && tlsCheckbox.checked) {
+        securitySelect.value = 'tls';
+    } else {
+        securitySelect.value = 'none';
+    }
+    
+    // Manejar cambios en el selector de seguridad
+    securitySelect.addEventListener('change', function() {
+        if (sslCheckbox) sslCheckbox.checked = this.value === 'ssl';
+        if (tlsCheckbox) tlsCheckbox.checked = this.value === 'tls';
+    });
+    
+    // Manejo del formulario de prueba de email
+    const testEmailForm = document.getElementById('test-email-form');
+    const testResultDiv = document.getElementById('test-result');
+    
+    if (testEmailForm) {
+        testEmailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('test-email').value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Mostrar estado de carga
+            testResultDiv.textContent = 'Enviando correo de prueba...';
+            testResultDiv.className = 'p-4 bg-blue-800 text-blue-200 rounded';
+            testResultDiv.classList.remove('hidden');
+            
+            fetch("{% url 'email_test' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                testResultDiv.innerHTML = `<i class="fas ${data.ok ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-2"></i>${data.message}`;
+                testResultDiv.className = data.ok ? 
+                    'p-4 bg-green-800 text-green-200 rounded' : 
+                    'p-4 bg-red-800 text-red-200 rounded';
+                testResultDiv.classList.remove('hidden');
+            })
+            .catch(error => {
+                testResultDiv.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>Error: ${error.message}`;
+                testResultDiv.className = 'p-4 bg-red-800 text-red-200 rounded';
+                testResultDiv.classList.remove('hidden');
+            });
+        });
+    }
+});
+
+function togglePasswordVisibility() {
+    const passwordField = document.querySelector('input[name="password"]');
+    const eyeIcon = document.getElementById('eye-icon');
+    
+    if (passwordField && eyeIcon) {
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+}
+</script>
+{% endblock %}

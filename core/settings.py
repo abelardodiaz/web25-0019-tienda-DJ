@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'core',
     'widget_tweaks',
     'django_ckeditor_5',
+    'encrypted_model_fields',
 ]
 
 MIDDLEWARE = [
@@ -239,4 +240,6 @@ if DEBUG:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', 'django-insecure-!dev-key!')
 

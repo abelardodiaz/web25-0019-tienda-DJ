@@ -1,0 +1,104 @@
+from django import forms
+from .models import EmailConfig
+from django.core.exceptions import ValidationError
+from django.utils.safestring import mark_safe
+from django.views.generic import FormView, View
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import JsonResponse
+import json
+from django.core.mail import send_mail, get_connection
+from django.conf import settings
+
+class EmailConfigForm(forms.ModelForm):
+    PORT_CHOICES = [
+        (465, '465'),
+        (587, '587'),
+        ('custom', 'Personalizado'),
+    ]
+    
+    port_choice = forms.ChoiceField(
+        choices=PORT_CHOICES,
+        label="Puerto estándar",
+        initial=587,
+        widget=forms.RadioSelect(attrs={'class': 'form-radio'})
+    )
+    custom_port = forms.IntegerField(
+        required=False,
+        label="Puerto personalizado",
+        widget=forms.NumberInput(attrs={'class': 'form-input mt-1 block w-full'})
+    )
+
+    port = forms.IntegerField(  # Campo oculto para el puerto real
+        widget=forms.HiddenInput(),
+        required=False
+    )
+
+    class Meta:
+        model = EmailConfig
+        fields = '__all__'  # Ahora incluye 'port'
+        widgets = {
+            'password': forms.PasswordInput(attrs={
+                'class': 'w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3 pr-10',  # Añadido padding derecho
+                'placeholder': 'Contraseña SMTP'
+            }),
+        }
+        labels = {
+            'use_ssl': 'Usar SSL',
+            'use_tls': 'Usar TLS',
+            'active': 'Activar configuración'
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.get('instance')
+        super().__init__(*args, **kwargs)
+        
+        if self.instance and self.instance.port not in [465, 587]:
+            self.initial['port_choice'] = 'custom'
+            self.initial['custom_port'] = self.instance.port
+        else:
+            self.initial['port_choice'] = str(self.instance.port) if self.instance else '587'
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Actualizar todos los campos manualmente
+        instance.host = self.cleaned_data['host']
+        instance.port = self.cleaned_data['port']
+        instance.username = self.cleaned_data['username']
+        instance.password = self.cleaned_data['password']  # Se encripta automáticamente
+        instance.from_name = self.cleaned_data['from_name']
+        instance.use_ssl = self.cleaned_data['use_ssl']
+        instance.use_tls = self.cleaned_data['use_tls']
+        instance.active = self.cleaned_data['active']
+        
+        if commit:
+            instance.save()
+        return instance
+
+    def clean(self):
+        cleaned_data = super().clean()
+        port_choice = cleaned_data.get('port_choice')
+        custom_port = cleaned_data.get('custom_port')
+        use_ssl = cleaned_data.get('use_ssl')
+        use_tls = cleaned_data.get('use_tls')
+
+        # Validar puerto
+        if port_choice == 'custom':
+            if custom_port is None:
+                raise ValidationError({'custom_port': 'Por favor, especifique un puerto personalizado.'})
+            port = custom_port
+        else:
+            port = int(port_choice)
+        cleaned_data['port'] = port
+        print(f"Cleaned port: {port}")  # Add this line
+
+        # Validar que el puerto no sea 25
+        if port == 25:
+            raise ValidationError("El puerto 25 está bloqueado por políticas de seguridad. Use 465 (SSL) o 587 (TLS).")
+
+        # Validar SSL y TLS
+        if use_ssl and use_tls:
+            raise ValidationError("No se puede activar SSL y TLS al mismo tiempo. Elija uno.")
+
+        return cleaned_data 

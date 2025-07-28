@@ -41,6 +41,7 @@ import itertools
 from products.models import Category, Brand
 from django.http import QueryDict
 from django.contrib.auth.views import LogoutView
+from .views import EmailConfigView, EmailTestView
 
 LOGIN_URL = 'login'  # Nombre de tu URL de login
 LOGIN_REDIRECT_URL = '/dashboard/'  # URL a redirigir después de login
@@ -104,6 +105,10 @@ urlpatterns = [
 
     path('agente/', catalogo_views.agente_chat, name='agente_chat'),
     path('instant-search/', instant_search, name='instant_search'),
+
+    # Email Configuration
+    path('panel/email/', EmailConfigView.as_view(), name='email_config'),
+    path('panel/email/test/', EmailTestView.as_view(), name='email_test'),
 ]
 
 # New SEO-friendly URLs

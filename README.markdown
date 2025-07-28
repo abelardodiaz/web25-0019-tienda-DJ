@@ -1,4 +1,55 @@
-# Registro de Cambios
+
+#############################
+#### Registro de Cambios ####
+#############################
+
+# v0.2.6 - 2025-07-27 23:30  
+#IMPLEMENTAR ORDENES DE COMPRA PASO 1
+## Configuración SMTP + Prueba de envío
+
+### 🚀 Novedades principales
+- **Panel de configuración SMTP** exclusivo para personal autorizado (`is_staff=True`)
+- **Modelo `EmailConfig`** en base de datos para almacenamiento seguro
+- **Encriptación Fernet** mediante `django-encrypted-model-fields` (v1.0.5)
+- **Pruebas de envío** en tiempo real desde la interfaz
+
+### 🔐 Seguridad reforzada
+- Contraseñas SMTP cifradas con **AES-256-CBC**
+- Clave de encriptación derivada de `SECRET_KEY`
+- Validación estricta de puertos (bloqueo de puerto 25)
+
+### 📦 Dependencias clave
+```requirements
+django-encrypted-model-fields==1.0.5  # Capa de encriptación
+cryptography==42.0.8                  # Implementación Fernet
+```
+
+### 💾 Modelo de datos
+| Campo         | Tipo                | Descripción               |
+|---------------|---------------------|---------------------------|
+| `host`        | `CharField`         | Servidor SMTP             |
+| `port`        | `IntegerField`      | Puerto (≠25)              |
+| `username`    | `CharField`         | Usuario de autenticación  |
+| `password`    | `EncryptedTextField`| Contraseña cifrada        |
+| `active`      | `BooleanField`      | Estado activo/inactivo    |
+
+### 👨‍💻 Acceso controlado
+```python
+# core/views.py
+class EmailConfigView(UserPassesTestMixin, ...):
+    def test_func(self):
+        # Solo personal autorizado
+        return self.request.user.is_staff
+```
+
+### ✅ Beneficios
+- **Centralización**: Configuración SMTP en base de datos
+- **Seguridad**: Cifrado extremo-a-extremo de credenciales
+- **Verificación**: Pruebas instantáneas sin salir del sistema
+- **Control**: Acceso restringido a personal autorizado
+
+> **Próximo paso**: Integración con módulo de órdenes de compra
+
 ## v0.2.5 - 2025-07-26 23:55
 ### Solución CASO D: URLs Amigables para SEO
 

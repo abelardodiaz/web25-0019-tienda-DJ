@@ -1,0 +1,233 @@
+{% extends "admin_base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-gray-200 mb-6">Configuración del Servidor SMTP</h1>
+    
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="bg-red-800 text-red-200 p-4 rounded">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Host -->
+            <div class="mb-4">
+                <label for="{{ form.host.id_for_label }}" class="block text-gray-300 mb-2">Host SMTP</label>
+                {{ form.host|add_class:"w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" }}
+                {% if form.host.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.host.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Port Selection -->
+            <div class="mb-4">
+                <label class="block text-gray-300 mb-2">Puerto</label>
+                <div class="flex flex-col space-y-2">
+                    {% for choice in form.port_choice %}
+                        <label class="inline-flex items-center">
+                            {{ choice }}
+                            <span class="ml-2 text-gray-300">{{ choice.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% if form.port_choice.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.port_choice.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Custom Port -->
+            <div class="mb-4" id="custom-port-container" style="display: none;">
+                <label for="{{ form.custom_port.id_for_label }}" class="block text-gray-300 mb-2">Puerto personalizado</label>
+                {{ form.custom_port|add_class:"w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3" }}
+                {% if form.custom_port.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.custom_port.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Username -->
+            <div class="mb-4">
+                <label for="{{ form.username.id_for_label }}" class="block text-gray-300 mb-2">Usuario</label>
+                {{ form.username|add_class:"w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3" }}
+                {% if form.username.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.username.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- Password -->
+            <div class="mb-4">
+                <label for="{{ form.password.id_for_label }}" class="block text-gray-300 mb-2">
+                    {{ form.password.label }}
+                </label>
+                <div class="relative">
+                    {{ form.password }}
+                    <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                            onclick="togglePasswordVisibility()">
+                        <i id="eye-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- From Name -->
+            <div class="mb-4">
+                <label for="{{ form.from_name.id_for_label }}" class="block text-gray-300 mb-2">Nombre del remitente</label>
+                {{ form.from_name|add_class:"w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3" }}
+                {% if form.from_name.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.from_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <!-- SSL and TLS -->
+            <div class="mb-4">
+                <label class="block text-gray-300 mb-2">Seguridad</label>
+                <div class="flex space-x-4">
+                    <label class="inline-flex items-center">
+                        {{ form.use_ssl|add_class:"form-checkbox h-4 w-4 text-blue-600" }}
+                        <span class="ml-2 text-gray-300">Usar SSL</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        {{ form.use_tls|add_class:"form-checkbox h-4 w-4 text-blue-600" }}
+                        <span class="ml-2 text-gray-300">Usar TLS</span>
+                    </label>
+                </div>
+                {% if form.use_ssl.errors or form.use_tls.errors %}
+                    <p class="text-red-500 text-sm mt-1">
+                        {% for error in form.use_ssl.errors %}{{ error }}{% endfor %}
+                        {% for error in form.use_tls.errors %}{{ error }}{% endfor %}
+                    </p>
+                {% endif %}
+            </div>
+            
+            <!-- Active -->
+            <div class="mb-4">
+                <label class="inline-flex items-center">
+                    {{ form.active|add_class:"form-checkbox h-4 w-4 text-blue-600" }}
+                    <span class="ml-2 text-gray-300">Activar configuración</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Guardar Configuración
+            </button>
+        </div>
+    </form>
+    
+    <!-- Test Email Section -->
+    <div class="mt-12">
+        <h2 class="text-xl font-bold text-gray-200 mb-4">Probar Configuración</h2>
+        <form id="test-email-form" class="flex items-end space-x-4">
+            {% csrf_token %}
+            <div class="flex-1">
+                <label for="test-email" class="block text-gray-300 mb-2">Correo de destino</label>
+                <input type="email" id="test-email" name="email" required class="w-full bg-dark-700 border border-gray-600 text-gray-200 rounded-lg px-4 py-3">
+            </div>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded h-fit">
+                Enviar Correo de Prueba
+            </button>
+        </form>
+        <div id="test-result" class="mt-4 hidden"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    const passwordField = document.getElementById('password-field');
+    const toggleButton = document.getElementById('password-toggle');
+    
+    if (passwordField && toggleButton) {
+        toggleButton.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            // Change icon
+            const icon = toggleButton.querySelector('i');
+            if (type === 'text') {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+    
+    // Show/hide custom port field
+    const portChoiceRadios = document.querySelectorAll('input[name="port_choice"]');
+    const customPortContainer = document.getElementById('custom-port-container');
+    
+    function updateCustomPortVisibility() {
+        const selectedValue = document.querySelector('input[name="port_choice"]:checked').value;
+        customPortContainer.style.display = selectedValue === 'custom' ? 'block' : 'none';
+    }
+    
+    portChoiceRadios.forEach(radio => {
+        radio.addEventListener('change', updateCustomPortVisibility);
+    });
+    
+    // Initialize
+    updateCustomPortVisibility();
+    
+    // Test email form submission
+    const testEmailForm = document.getElementById('test-email-form');
+    const testResultDiv = document.getElementById('test-result');
+    
+    if (testEmailForm) {
+        testEmailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('test-email').value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            testResultDiv.classList.add('hidden');
+            
+            fetch("{% url 'email_test' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                testResultDiv.textContent = data.message;
+                testResultDiv.className = data.ok ? 
+                    'p-4 bg-green-800 text-green-200 rounded' : 
+                    'p-4 bg-red-800 text-red-200 rounded';
+                testResultDiv.classList.remove('hidden');
+            })
+            .catch(error => {
+                testResultDiv.textContent = 'Error: ' + error.message;
+                testResultDiv.className = 'p-4 bg-red-800 text-red-200 rounded';
+                testResultDiv.classList.remove('hidden');
+            });
+        });
+    }
+});
+
+function togglePasswordVisibility() {
+    const passwordField = document.getElementById('password-field');
+    const eyeIcon = document.getElementById('eye-icon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+</script>
+{% endblock %} 

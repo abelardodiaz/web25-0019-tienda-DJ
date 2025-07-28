@@ -20,3 +20,6 @@ langchain
 twilio
 tabulate
 django-ckeditor-5
+django-encrypted-model-fields
+pytest
+pytest-django
